@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# 只允许一个 release job 同时运行，避免重复 publish。
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # 需要 id-token: write 才能开启 npm provenance 签名（sigstore）。
+    # contents: write 用于创建 GitHub Release。
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 完整历史，方便 generate-notes 比对上个 tag
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ───── 校验 tag 与 package.json version 一致 ─────
+      # tag 形如 v0.1.1，package.json version 必须是 0.1.1 — 防止
+      # "改了 tag 但忘了同步 package.json"导致发出错误版本号。
+      - name: Verify tag matches package.json
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "✗ tag $GITHUB_REF_NAME (= $TAG_VERSION) ≠ package.json version $PKG_VERSION" >&2
+            exit 1
+          fi
+          echo "✓ tag $GITHUB_REF_NAME matches package.json version $PKG_VERSION"
+
+      # ───── 完整检查 ─────
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      # ───── 发布到 npm ─────
+      # provenance: true 让 npm 生成可验证的 sigstore 签名，要求 token 必须是
+      # automation token（在 npmjs.com 创建：Access Tokens → Generate New Token
+      # → Automation）。设置后，浏览者在 npm 包页面能看到 "Provenance" 徽章。
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --no-git-checks --provenance --access public
+
+      # ───── 创建 GitHub Release ─────
+      # generate_release_notes: true 让 GitHub 用上一个 tag 到当前 tag 之间的
+      # commits / PRs 自动生成 changelog。如果偏好手工写 release notes，把这一步
+      # 改成手工在 GitHub UI 上 Edit Release。
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}

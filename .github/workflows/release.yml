@@ -85,11 +85,32 @@ jobs:
       # 给 GitHub Release 上传一个版本化的 .skill 文件，供"在线一键安装"使用：
       #   curl/gh release download → unzip 到 ~/.claude/skills/
       # 文件名带 tag（talon-doc-runtime-v0.1.0.skill），方便用户固定版本。
-      - name: Pack skill
+      #
+      # 不走本地的 pnpm skill:pack — 那个脚本依赖本地安装的 skill-creator
+      # 工具链。CI 里直接用 zip 拼包，结构与 skill-creator 输出一致：
+      #   talon-doc-runtime/
+      #     ├── SKILL.md
+      #     ├── references/
+      #     ├── scripts/
+      #     └── assets/talon-doc-runtime.iife.js
+      - name: Pack skill artifact
         run: |
-          pnpm skill:pack
-          cp dist/skill/talon-doc-runtime.skill \
-             dist/skill/talon-doc-runtime-${GITHUB_REF_NAME}.skill
+          set -euo pipefail
+          STAGE="$RUNNER_TEMP/skill-stage/talon-doc-runtime"
+          mkdir -p "$STAGE/references" "$STAGE/scripts" "$STAGE/assets"
+          cp SKILL.md                            "$STAGE/SKILL.md"
+          cp references/canvas.md                "$STAGE/references/"
+          cp references/lineage.md               "$STAGE/references/"
+          cp scripts/critique.mjs                "$STAGE/scripts/"
+          cp scripts/balance.mjs                 "$STAGE/scripts/"
+          cp dist/talon-doc-runtime.iife.js      "$STAGE/assets/"
+
+          mkdir -p dist/skill
+          (cd "$RUNNER_TEMP/skill-stage" && \
+            zip -qr "$GITHUB_WORKSPACE/dist/skill/talon-doc-runtime-${GITHUB_REF_NAME}.skill" talon-doc-runtime)
+
+          echo "✓ Packed dist/skill/talon-doc-runtime-${GITHUB_REF_NAME}.skill"
+          unzip -l "dist/skill/talon-doc-runtime-${GITHUB_REF_NAME}.skill"
 
       # ───── 创建 GitHub Release ─────
       # generate_release_notes: true 让 GitHub 用上一个 tag 到当前 tag 之间的

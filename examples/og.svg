@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Warm paper background -->
+    <linearGradient id="paper" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbf9f4"/>
+      <stop offset="100%" stop-color="#f4efe4"/>
+    </linearGradient>
+    <!-- Subtle vignette -->
+    <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
+      <stop offset="60%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#1a1812" stop-opacity="0.12"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#paper)"/>
+  <rect width="1200" height="630" fill="url(#vignette)"/>
+
+  <!-- Editorial frame: top + bottom rules -->
+  <line x1="72" y1="76" x2="1128" y2="76" stroke="#1a1812" stroke-width="1.5"/>
+  <line x1="72" y1="80" x2="1128" y2="80" stroke="#1a1812" stroke-width="0.5"/>
+  <line x1="72" y1="554" x2="1128" y2="554" stroke="#1a1812" stroke-width="0.5"/>
+  <line x1="72" y1="558" x2="1128" y2="558" stroke="#1a1812" stroke-width="1.5"/>
+
+  <!-- Top eyebrow: edition mark + accent dot -->
+  <g transform="translate(72, 56)" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="11" font-weight="600" letter-spacing="2.5" fill="#7a6b4a">
+    <text x="0" y="0">ISSUE 0.1 · STRUCTURED DOCUMENT RUNTIME</text>
+    <circle cx="1056" cy="-4" r="3" fill="#c44a35"/>
+    <text x="1056" y="0" text-anchor="end" font-family="ui-monospace, 'SF Mono', Menlo, monospace" letter-spacing="2.5" fill="#7a6b4a">NEW</text>
+  </g>
+
+  <!-- Big serif headline, two lines, generous leading -->
+  <g transform="translate(72, 200)" font-family="'Iowan Old Style', 'Palatino', Georgia, serif" fill="#1a1812">
+    <text x="0" y="0" font-size="124" font-weight="700" letter-spacing="-4">Talon Doc</text>
+    <text x="0" y="118" font-size="124" font-weight="700" letter-spacing="-4">Runtime</text>
+  </g>
+
+  <!-- Decorative red mark — small block-quote bar -->
+  <rect x="56" y="200" width="4" height="232" fill="#c44a35"/>
+
+  <!-- Tagline -->
+  <g transform="translate(72, 470)" font-family="'Iowan Old Style', 'Palatino', Georgia, serif">
+    <text x="0" y="0" font-size="32" font-style="italic" fill="#3a3528" letter-spacing="-0.5">
+      Agents write tags. Readers see documents.
+    </text>
+  </g>
+
+  <!-- Right column: floating DSL snippet on a card -->
+  <g transform="translate(720, 132)">
+    <!-- Card -->
+    <rect x="0" y="0" width="384" height="356" rx="3" fill="#ffffff" stroke="#d9d0b6" stroke-width="1"/>
+    <!-- Card shadow accent -->
+    <line x1="4" y1="356" x2="384" y2="356" stroke="#1a1812" stroke-opacity="0.10" stroke-width="2"/>
+    <line x1="384" y1="4" x2="384" y2="356" stroke="#1a1812" stroke-opacity="0.06" stroke-width="2"/>
+
+    <!-- Header bar -->
+    <line x1="0" y1="40" x2="384" y2="40" stroke="#e0d6bf" stroke-width="1"/>
+    <g transform="translate(20, 26)" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="11" font-weight="600" letter-spacing="1.5" fill="#8a7d5a">
+      <text x="0" y="0">postmortem.html</text>
+    </g>
+
+    <!-- DSL snippet, monospace, syntax-highlighted -->
+    <g transform="translate(20, 70)" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="14.5" font-weight="500">
+      <!-- line 1: <d s="bad" v="P0" -->
+      <text x="0" y="0">
+        <tspan fill="#9a8e76">&lt;</tspan><tspan fill="#3b6f3b" font-weight="700">d</tspan><tspan fill="#9a8e76"> </tspan><tspan fill="#7a5a26">s</tspan><tspan fill="#9a8e76">=</tspan><tspan fill="#a04a25">"bad"</tspan><tspan fill="#9a8e76"> </tspan><tspan fill="#7a5a26">v</tspan><tspan fill="#9a8e76">=</tspan><tspan fill="#a04a25">"P0"</tspan>
+      </text>
+      <!-- line 2: t="..." -->
+      <text x="0" y="24">
+        <tspan fill="#9a8e76">   </tspan><tspan fill="#7a5a26">t</tspan><tspan fill="#9a8e76">=</tspan><tspan fill="#a04a25">"Token family</tspan>
+      </text>
+      <text x="0" y="48">
+        <tspan fill="#9a8e76">      </tspan><tspan fill="#a04a25">revoked"</tspan><tspan fill="#9a8e76">&gt;</tspan>
+      </text>
+      <!-- line 4: <because> -->
+      <text x="0" y="78">
+        <tspan fill="#9a8e76">  &lt;</tspan><tspan fill="#5a6a8a" font-weight="700">because</tspan><tspan fill="#9a8e76">&gt;</tspan>
+      </text>
+      <text x="0" y="102" fill="#3a3528">
+        <tspan x="0">    Two tabs race the</tspan>
+      </text>
+      <text x="0" y="124" fill="#3a3528">
+        <tspan x="0">    "consumed?" check.</tspan>
+      </text>
+      <text x="0" y="148">
+        <tspan fill="#9a8e76">  &lt;/</tspan><tspan fill="#5a6a8a" font-weight="700">because</tspan><tspan fill="#9a8e76">&gt;</tspan>
+      </text>
+      <!-- line 7: <so> -->
+      <text x="0" y="178">
+        <tspan fill="#9a8e76">  &lt;</tspan><tspan fill="#3b6f3b" font-weight="700">so</tspan><tspan fill="#9a8e76">&gt;</tspan>
+      </text>
+      <text x="0" y="202" fill="#3a3528">
+        <tspan x="0">    Whole family revoked.</tspan>
+      </text>
+      <text x="0" y="224" fill="#3a3528">
+        <tspan x="0">    Both tabs logged out.</tspan>
+      </text>
+      <text x="0" y="246">
+        <tspan fill="#9a8e76">  &lt;/</tspan><tspan fill="#3b6f3b" font-weight="700">so</tspan><tspan fill="#9a8e76">&gt;</tspan>
+      </text>
+      <text x="0" y="270">
+        <tspan fill="#9a8e76">&lt;/</tspan><tspan fill="#3b6f3b" font-weight="700">d</tspan><tspan fill="#9a8e76">&gt;</tspan>
+      </text>
+    </g>
+
+    <!-- Bottom rule + caption -->
+    <line x1="20" y1="320" x2="364" y2="320" stroke="#e0d6bf" stroke-width="1"/>
+    <g transform="translate(20, 340)" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="11" letter-spacing="1.5" fill="#8a7d5a">
+      <text x="0" y="0">RENDERS AS A DECISION CARD →</text>
+    </g>
+  </g>
+
+  <!-- Bottom band: URL + npm -->
+  <g transform="translate(72, 590)" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="14" font-weight="500" fill="#5a5040" letter-spacing="0.3">
+    <text x="0" y="0">darkmice.github.io/talon-doc-runtime</text>
+    <text x="1056" y="0" text-anchor="end" fill="#5a5040">@talon-ui/doc-runtime</text>
+  </g>
+</svg>

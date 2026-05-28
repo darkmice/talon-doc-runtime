@@ -146,7 +146,7 @@ Built-in actions:
 Hosts can register custom actions:
 
 ```ts
-import { registerAction } from '@talon/doc-runtime'
+import { registerAction } from '@talon-ui/doc-runtime'
 registerAction('accept', ({ target }) => { /* ... */ })
 ```
 
@@ -168,7 +168,7 @@ Built-in archetypes:
 Hosts can register their own archetypes:
 
 ```ts
-import { registerArchetype, setArchetype } from '@talon/doc-runtime'
+import { registerArchetype, setArchetype } from '@talon-ui/doc-runtime'
 registerArchetype('my-style', CSS_STRING)
 setArchetype('my-style')
 ```

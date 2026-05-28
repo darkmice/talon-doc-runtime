@@ -64,7 +64,7 @@ python3 -m http.server 4174
 IIFE 包会自动 `mount()`。要手动控制：
 
 ```ts
-import { mount, registerAction, setArchetype } from '@talon/doc-runtime'
+import { mount, registerAction, setArchetype } from '@talon-ui/doc-runtime'
 
 registerAction('accept', ({ target }) => {
   acceptArtifact(target?.id)
@@ -158,7 +158,7 @@ talon-doc-runtime.skill
 注册自定义 archetype：
 
 ```ts
-import { registerArchetype, setArchetype } from '@talon/doc-runtime'
+import { registerArchetype, setArchetype } from '@talon-ui/doc-runtime'
 registerArchetype('my-style', CSS_STRING)
 setArchetype('my-style')
 ```

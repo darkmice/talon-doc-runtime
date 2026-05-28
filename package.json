@@ -1,5 +1,5 @@
 {
-  "name": "@talon/doc-runtime",
+  "name": "@talon-ui/doc-runtime",
   "version": "0.1.0",
   "description": "Agent-native structured document runtime — short HTML DSL tags rendered into themed, interactive documents (decisions, evidence, flows, risks, ...).",
   "keywords": [

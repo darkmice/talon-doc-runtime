@@ -121,7 +121,7 @@ runtime 内置动作：
 宿主可注册新动作：
 
 ```ts
-import { registerAction } from '@talon/doc-runtime'
+import { registerAction } from '@talon-ui/doc-runtime'
 
 registerAction('accept', ({ target }) => {
   console.log('accept', target?.id)
@@ -157,7 +157,7 @@ TalonDocRuntime.setArchetype('business-document')
 宿主可注册自定义 archetype：
 
 ```ts
-import { registerArchetype, setArchetype } from '@talon/doc-runtime'
+import { registerArchetype, setArchetype } from '@talon-ui/doc-runtime'
 
 registerArchetype('my-corp-style', `
   [data-archetype="my-corp-style"] {

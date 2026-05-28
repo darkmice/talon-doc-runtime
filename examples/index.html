@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN" data-archetype="business-document">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Talon Doc Runtime — Live Demos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+  </head>
+  <body>
+    <main class="tdr-doc">
+
+      <h1>Talon Doc Runtime</h1>
+      <p class="tdr-subtitle">面向 Agent 的结构化文档运行时 — Live Demos</p>
+
+      <lead>下面是三份用 TDR 渲染的真实文档。它们都用同一套短标签 DSL，唯一区别是根元素上的 <code>data-archetype</code> 属性。所有页面从 unpkg CDN 加载 runtime，深色模式跟随系统设置，也可以在文档底部手动切换。</lead>
+
+      <call k="info" t="Reading order">
+        <p>第一次访问推荐先看「组件总览」(business-document) — 那是覆盖最广的一份；再看 editorial-longform 版本看同一套 DSL 在文学排版下的样子；最后看 demo 看最小入门写法。</p>
+      </call>
+
+      <hr>
+
+      <h2>Live demos</h2>
+
+      <grid c="1">
+        <card t="组件总览 · business-document">
+          <p>一份"支付链路 P0 复盘"，覆盖全部 30+ 组件 — 决策、误解澄清、类比、时间线、流程图、分支可能性、评估轨道、风险登记、文件变更、引用证据… 每个组件在文档里都有真实位置，不是为了演示而堆叠。</p>
+          <foot><btn a="open-link" to="./showcase.tdr.html">打开 showcase.tdr.html →</btn></foot>
+        </card>
+
+        <card t="同一份 DSL · editorial-longform">
+          <p>同样的 DSL 内容，渲染成杂志风格 — 衬线字体、首字下沉、非对称栏宽、装饰性 <code>&lt;hr&gt;</code> 符号。展示"DSL 一致、视觉随 archetype 切换"的核心理念。</p>
+          <foot><btn a="open-link" to="./showcase.editorial.tdr.html">打开 showcase.editorial.tdr.html →</btn></foot>
+        </card>
+
+        <card t="最小入门 · demo">
+          <p>最简单的一页：一个 <code>&lt;d&gt;</code> 决策卡 + 一个 <code>&lt;c&gt;</code> 折叠区 + 一个 <code>&lt;src&gt;</code> 代码引用。50 行内就理解 DSL 写法。</p>
+          <foot><btn a="open-link" to="./demo.html">打开 demo.html →</btn></foot>
+        </card>
+      </grid>
+
+      <hr>
+
+      <h2>这是什么</h2>
+
+      <p>TDR 让 Agent（Claude 等）输出**短小、语义明确**的 HTML 标签 — <code>&lt;d&gt;</code> / <code>&lt;src&gt;</code> / <code>&lt;branch&gt;</code> / <code>&lt;evidence&gt;</code> / <code>&lt;myth&gt;</code> 等 — 浏览器加载 runtime 后，DOM 被原地增强为带主题、折叠、代码高亮、引用跳转和受控事件的可交付文档。</p>
+
+      <p>设计目标只有一个：<strong>让 Agent 用尽可能少的 token，输出结构稳定、视觉成熟、可复用的文档制品</strong>。</p>
+
+      <kv>
+        <row k="npm" v="@talon-ui/doc-runtime"></row>
+        <row k="repo" v="github.com/darkmice/talon-doc-runtime"></row>
+        <row k="skill" v="talon-doc-runtime.skill (Anthropic Skills 格式)"></row>
+        <row k="archetypes" v="business-document, editorial-longform"></row>
+        <row k="状态" v="0.1.x — early" vk="enum"></row>
+      </kv>
+
+      <h2>两分钟集成</h2>
+
+      <cb f="install.sh"><pre><code>npm install @talon-ui/doc-runtime</code></pre></cb>
+
+      <cb f="your-doc.html"><pre><code>&lt;html data-archetype="business-document"&gt;
+  &lt;body&gt;
+    &lt;main class="tdr-doc"&gt;
+      &lt;h1&gt;Your structured doc&lt;/h1&gt;
+      &lt;d s="bad" v="P0" t="Bug title"&gt;...&lt;/d&gt;
+    &lt;/main&gt;
+    &lt;script src="https://unpkg.com/@talon-ui/doc-runtime/dist/talon-doc-runtime.iife.js"&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre></cb>
+
+      <p>完整的标签清单、属性、组件选型指南见 <a href="https://github.com/darkmice/talon-doc-runtime#readme">README</a> 与 <a href="https://github.com/darkmice/talon-doc-runtime/blob/main/SKILL.md">SKILL.md</a>。</p>
+
+      <hr>
+
+      <h2>主题切换</h2>
+
+      <p>所有 demo 都支持深色模式 (跟随系统) 与 archetype 切换。下面这些按钮在演示页里也能用：</p>
+
+      <p>
+        <btn a="theme" to="light">浅色</btn>
+        <btn a="theme" to="dark">深色</btn>
+        <btn a="theme" to="auto">跟随系统</btn>
+        <btn a="archetype" to="business-document">商务文档</btn>
+        <btn a="archetype" to="editorial-longform">长文杂志</btn>
+      </p>
+
+      <call k="note">
+        <p>注意：archetype 切换需要加载对应的 CSS — 由 runtime 自动处理，但首次切换可能闪一下。</p>
+      </call>
+
+    </main>
+
+    <script src="https://unpkg.com/@talon-ui/doc-runtime/dist/talon-doc-runtime.iife.js"></script>
+    <script>
+      // 'open-link' is not a built-in TDR action — register it so the demo
+      // cards can route to sibling HTML files via <btn a="open-link" to="...">.
+      window.addEventListener('load', () => {
+        if (window.TalonDocRuntime?.registerAction) {
+          window.TalonDocRuntime.registerAction('open-link', ({ source }) => {
+            const to = source.getAttribute('to')
+            if (to) window.location.href = to
+          })
+        }
+      })
+    </script>
+  </body>
+</html>

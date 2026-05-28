@@ -1,0 +1,53 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'examples/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+# 只允许一个并发部署，新部署会取消进行中的。
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+# Pages 部署所需权限。
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Opt JavaScript-based actions into the Node 24 runtime ahead of
+# GitHub's 2026-06-02 forced cut-over.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  deploy:
+    name: Deploy examples to GitHub Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      # examples/ 是站点根。脚本引用 unpkg CDN 上的 runtime，
+      # 不依赖仓库 dist/，所以这里不需要 build。
+      - name: Upload examples as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: examples
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -10,6 +10,12 @@ concurrency:
   group: release
   cancel-in-progress: false
 
+# Opt JavaScript-based actions (checkout / setup-node / pnpm-setup) into the
+# Node 24 runtime ahead of GitHub's 2026-06-02 forced cut-over. Remove this
+# block when those actions publish v5 with native Node 24 support.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   publish:
     name: Publish to npm

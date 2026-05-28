@@ -1,0 +1,78 @@
+{
+  "name": "@talon/doc-runtime",
+  "version": "0.1.0",
+  "description": "Agent-native structured document runtime — short HTML DSL tags rendered into themed, interactive documents (decisions, evidence, flows, risks, ...).",
+  "keywords": [
+    "agent",
+    "llm",
+    "claude",
+    "structured-document",
+    "dsl",
+    "html",
+    "runtime",
+    "anthropic-skill"
+  ],
+  "homepage": "https://github.com/darkmice/talon-doc-runtime#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darkmice/talon-doc-runtime.git"
+  },
+  "bugs": {
+    "url": "https://github.com/darkmice/talon-doc-runtime/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist/index.d.ts",
+    "dist/styles.d.ts",
+    "dist/highlight.d.ts",
+    "dist/talon-doc-runtime.cjs",
+    "dist/talon-doc-runtime.cjs.map",
+    "dist/talon-doc-runtime.esm.js",
+    "dist/talon-doc-runtime.esm.js.map",
+    "dist/talon-doc-runtime.iife.js",
+    "dist/talon-doc-runtime.iife.js.map",
+    "SKILL.md",
+    "README.md",
+    "AGENTS.md",
+    "LICENSE",
+    "docs",
+    "references"
+  ],
+  "main": "./dist/talon-doc-runtime.cjs",
+  "module": "./dist/talon-doc-runtime.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/talon-doc-runtime.esm.js",
+      "require": "./dist/talon-doc-runtime.cjs"
+    },
+    "./iife": "./dist/talon-doc-runtime.iife.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs && tsc -p tsconfig.types.json",
+    "dev": "pnpm build && python3 -m http.server 4174 -d .",
+    "test": "vitest run --environment happy-dom",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "skill:pack": "pnpm build && bash scripts/pack-skill.sh",
+    "prepublishOnly": "pnpm check"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "esbuild": "^0.24.2",
+    "happy-dom": "^15.11.7",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

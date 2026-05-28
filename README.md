@@ -17,7 +17,15 @@
 
 ## 快速开始
 
-### 在浏览器里看效果
+### 在线 Demo
+
+**[→ darkmice.github.io/talon-doc-runtime](https://darkmice.github.io/talon-doc-runtime/)**
+
+- [组件总览 · business-document](https://darkmice.github.io/talon-doc-runtime/showcase.tdr.html) — 一份支付链路 P0 复盘，覆盖全部 30+ 组件
+- [同一份 DSL · editorial-longform](https://darkmice.github.io/talon-doc-runtime/showcase.editorial.tdr.html) — 同样的 DSL，杂志风格
+- [最小入门 · demo](https://darkmice.github.io/talon-doc-runtime/demo.html) — 50 行内理解 DSL 写法
+
+### 本地预览
 
 ```bash
 pnpm install
@@ -25,11 +33,7 @@ pnpm build
 python3 -m http.server 4174
 ```
 
-打开下面任一示例：
-
-- <http://localhost:4174/examples/showcase.tdr.html> — 完整组件总览（business-document）
-- <http://localhost:4174/examples/showcase.editorial.tdr.html> — 长文风格（editorial-longform）
-- <http://localhost:4174/examples/demo.html> — 最小示例
+然后打开 `http://localhost:4174/examples/`。
 
 ### 在你的页面里集成
 

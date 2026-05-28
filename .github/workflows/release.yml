@@ -29,9 +29,9 @@ jobs:
           fetch-depth: 0   # 完整历史，方便 generate-notes 比对上个 tag
 
       - name: Setup pnpm
+        # Version comes from package.json's "packageManager" field.
+        # Specifying it again here would trigger ERR_PNPM_BAD_PM_VERSION.
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v4

@@ -81,10 +81,22 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: pnpm publish --no-git-checks --provenance --access public
 
+      # ───── 打包 .skill artifact ─────
+      # 给 GitHub Release 上传一个版本化的 .skill 文件，供"在线一键安装"使用：
+      #   curl/gh release download → unzip 到 ~/.claude/skills/
+      # 文件名带 tag（talon-doc-runtime-v0.1.0.skill），方便用户固定版本。
+      - name: Pack skill
+        run: |
+          pnpm skill:pack
+          cp dist/skill/talon-doc-runtime.skill \
+             dist/skill/talon-doc-runtime-${GITHUB_REF_NAME}.skill
+
       # ───── 创建 GitHub Release ─────
       # generate_release_notes: true 让 GitHub 用上一个 tag 到当前 tag 之间的
       # commits / PRs 自动生成 changelog。如果偏好手工写 release notes，把这一步
       # 改成手工在 GitHub UI 上 Edit Release。
+      # files 列表里的两个文件会作为 Release assets 上传，README 的"在线安装"
+      # 步骤会用 gh release download / curl 拉取它们。
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -93,3 +105,6 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            dist/skill/talon-doc-runtime-${{ github.ref_name }}.skill
+            dist/talon-doc-runtime.iife.js

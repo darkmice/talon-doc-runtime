@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Talon Doc Runtime Demo</title>
+  </head>
+  <body>
+    <main class="tdr-doc">
+      <h1>Talon Doc Runtime Demo</h1>
+      <p>这个页面模拟 Agent 输出短标签 DSL，预加载 runtime 后自动增强为结构化文档。</p>
+
+      <d s="bad" v="P0" t="并发 refresh 误撤销 token 家族">
+        <p>两个 tab 同时刷新同一个 refresh token 时，第二个请求会误判为 token 重放，进而撤销整个 token 家族。</p>
+        <p>关键证据见 <ref to="refresh-src" x="refresh.ts:8"></ref>。</p>
+      </d>
+
+      <call k="warn" t="边界">
+        Agent 只输出结构和动作意图，不输出 CSS 或事件代码。事件由 runtime 的受控 action registry 处理。
+      </call>
+
+      <c t="复现链路">
+        <steps>
+          <step s="ok" t="Tab A" d="先消费 T1，拿到 T2"></step>
+          <step s="bad" t="Tab B" d="再次使用 T1，被当作重放攻击"></step>
+          <step s="bad" t="结果" d="T2 被家族撤销影响，两个 tab 都失效"></step>
+        </steps>
+
+        <src id="refresh-src" p="src/auth/refresh.ts:8-16" l="ts">
+          <pre><code>export async function rotateRefreshToken(token: string) {
+  const record = await findToken(token)
+  if (record.consumedAt) {
+    await revokeFamily(record.familyId)
+    throw new Error('token_reuse_detected')
+  }
+  return issueTokenPair(record.userId)
+}</code></pre>
+        </src>
+      </c>
+
+      <flow>
+        <n>Agent DSL</n>
+        <arr>mount</arr>
+        <n>DOM scanner</n>
+        <arr>enhance</arr>
+        <n>HTML view</n>
+      </flow>
+
+      <p>
+        <btn a="theme" to="dark">深色</btn>
+        <btn a="theme" to="light">浅色</btn>
+        <btn a="theme" to="auto">自动</btn>
+        <btn a="open" to="refresh-src">展开证据</btn>
+      </p>
+    </main>
+
+    <script src="../dist/talon-doc-runtime.iife.js"></script>
+  </body>
+</html>

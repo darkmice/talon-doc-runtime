@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<style>
+  @import url('https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css');
+  @import url('https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Semibold.min.css');
+  body { padding: 40px; background: #faf9f5; }
+  .row { display: flex; gap: 60px; margin-bottom: 30px; align-items: baseline; }
+  .swatch { font-size: 96px; line-height: 1; }
+  .label { font-family: ui-monospace, monospace; font-size: 12px; color: #666; margin-top: 8px; }
+  .case { display: inline-block; }
+  .misans { font-family: "MiSans", sans-serif; }
+  .pingfang { font-family: "PingFang SC", sans-serif; }
+  .yahei { font-family: "Microsoft YaHei", sans-serif; }
+  .hiragino { font-family: "Hiragino Sans GB", sans-serif; }
+  .system { font-family: system-ui, sans-serif; }
+  .actual { font-family: "MiSans", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="case"><div class="swatch misans">永认证</div><div class="label">MiSans (force)</div></div>
+    <div class="case"><div class="swatch pingfang">永认证</div><div class="label">PingFang SC (force)</div></div>
+  </div>
+  <div class="row">
+    <div class="case"><div class="swatch yahei">永认证</div><div class="label">Microsoft YaHei (force)</div></div>
+    <div class="case"><div class="swatch hiragino">永认证</div><div class="label">Hiragino Sans GB (force)</div></div>
+  </div>
+  <div class="row">
+    <div class="case"><div class="swatch system">永认证</div><div class="label">system-ui (force)</div></div>
+    <div class="case"><div class="swatch actual">永认证</div><div class="label">our chain (MiSans → PingFang → ...)</div></div>
+  </div>
+</body>
+</html>

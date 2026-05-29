@@ -61,7 +61,6 @@
       .split {
         max-width: 1240px;
         margin: 24px auto 64px;
-        padding: 0 24px;
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 1px;
@@ -92,7 +91,8 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 12px 18px;
+        height: 48px;
+        padding: 0 18px;
         font-size: 12px;
         font-weight: 600;
         letter-spacing: 0.04em;
@@ -118,6 +118,45 @@
         font-size: 11px;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
+
+      /* ── left-pane view toggle (源码 / 普通渲染) ── */
+      .toggle {
+        display: inline-flex;
+        gap: 2px;
+        padding: 2px;
+        border-radius: 7px;
+        background: rgba(0,0,0,0.06);
+        text-transform: none;
+        letter-spacing: 0;
+      }
+      @media (prefers-color-scheme: dark) {
+        .toggle { background: rgba(255,255,255,0.08); }
+      }
+      .toggle .seg {
+        appearance: none;
+        border: 0;
+        cursor: pointer;
+        padding: 3px 10px;
+        border-radius: 5px;
+        font: inherit;
+        font-size: 11px;
+        font-weight: 600;
+        color: inherit;
+        opacity: 0.6;
+        background: transparent;
+        line-height: 1.5;
+      }
+      .toggle .seg:hover { opacity: 0.85; }
+      .toggle .seg.is-active {
+        opacity: 1;
+        background: #ffffff;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+      }
+      @media (prefers-color-scheme: dark) {
+        .toggle .seg.is-active { background: #3a3a3a; box-shadow: none; }
+      }
+
+      [data-view][hidden] { display: none !important; }
 
       /* ── left: markdown source ── */
       .source {
@@ -150,6 +189,63 @@
         .source .task { color: #86efac; }
       }
 
+      /* ── left: plain markdown render (no TDR) ── */
+      /* Deliberately plain, "GitHub README"-ish typography so the contrast
+         with the structured TDR pane on the right is obvious: admonitions are
+         just blockquotes, task lists are bare checkboxes, <d>/<because> are
+         unknown unstyled elements. */
+      .preview {
+        padding: 22px 22px 28px;
+        font-size: 14px;
+        line-height: 1.65;
+        color: #24292f;
+      }
+      @media (prefers-color-scheme: dark) {
+        .preview { color: #c9d1d9; }
+      }
+      .preview h1, .preview h2, .preview h3 {
+        line-height: 1.25;
+        margin: 1.4em 0 0.5em;
+        font-weight: 650;
+      }
+      .preview h1 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid var(--rule, rgba(0,0,0,0.1)); }
+      .preview h2 { font-size: 1.25em; padding-bottom: 0.3em; border-bottom: 1px solid var(--rule, rgba(0,0,0,0.1)); }
+      .preview > :first-child { margin-top: 0; }
+      .preview p { margin: 0 0 1em; }
+      .preview a { color: #0969da; }
+      @media (prefers-color-scheme: dark) { .preview a { color: #58a6ff; } }
+      .preview code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.88em;
+        padding: 0.15em 0.4em;
+        border-radius: 5px;
+        background: rgba(127,127,127,0.16);
+      }
+      .preview pre {
+        background: rgba(127,127,127,0.1);
+        padding: 12px 14px;
+        border-radius: 8px;
+        overflow: auto;
+        font-size: 12.5px;
+        line-height: 1.5;
+      }
+      .preview pre code { background: none; padding: 0; }
+      .preview blockquote {
+        margin: 0 0 1em;
+        padding: 0.2em 1em;
+        color: inherit;
+        opacity: 0.85;
+        border-left: 3px solid var(--rule, rgba(0,0,0,0.2));
+      }
+      .preview ul { padding-left: 1.4em; margin: 0 0 1em; }
+      /* GFM task list checkboxes render as <input type=checkbox> */
+      .preview ul.contains-task-list { list-style: none; padding-left: 0.2em; }
+      .preview .task-list-item input { margin-right: 0.5em; }
+      .preview table { border-collapse: collapse; margin: 0 0 1em; }
+      .preview th, .preview td { border: 1px solid var(--rule, rgba(0,0,0,0.15)); padding: 5px 10px; }
+      /* Unknown TDR tags (<d>/<because>/<so>) have no styling here — they
+         show up as plain inline text, which is precisely the point. */
+
       /* ── right: rendered output ── */
       .output {
         padding: 8px 4px;
@@ -167,22 +263,27 @@
       <a class="back" href="./index.html">← 所有 demo</a>
       <h1>Markdown → 结构化文档</h1>
       <p>
-        同一份内容，左边是你写的 <strong>TDR-flavored Markdown</strong>，右边是
-        <code>tdr format</code> 转出来、由 runtime 实时渲染的结果。
-        admonition、带 <code>file:path:lines</code> 的代码块、task list、<code>&lt;details&gt;</code>
-        会自动 uplift 成 <code>&lt;call&gt;</code> / <code>&lt;src&gt;</code> /
-        <code>&lt;chk&gt;</code> / <code>&lt;c&gt;</code>；原生 TDR 标签（如 <code>&lt;d&gt;</code>）原样透传。
+        同一份内容，三种形态对照。左栏可切换 <strong>源码</strong> 与 <strong>普通 Markdown 渲染</strong>（GitHub README 那样的裸渲染）；
+        右栏是 <code>tdr format</code> 转出来、由 runtime 实时渲染的 <strong>TDR 结构化文档</strong>。
+        对比「普通渲染」和「TDR」就能看出：admonition、带 <code>file:path:lines</code> 的代码块、task list、<code>&lt;details&gt;</code>
+        在裸渲染里只是 blockquote / 勾选框 / 折叠块，在 TDR 里被 uplift 成
+        <code>&lt;call&gt;</code> / <code>&lt;src&gt;</code> / <code>&lt;chk&gt;</code> / <code>&lt;c&gt;</code>；
+        原生 <code>&lt;d&gt;</code> 标签在裸渲染里直接是无样式文本，在 TDR 里成为决策卡。
       </p>
     </header>
 
     <div class="split">
       <!-- ───────────────────────── LEFT: source ───────────────────────── -->
-      <section class="pane">
+      <section class="pane" id="left">
         <div class="pane-head">
-          <span class="dot src"></span> Markdown 源码
-          <span class="badge">markdown-source.md</span>
+          <span class="dot src"></span> Markdown
+          <span class="toggle" role="tablist" aria-label="左栏视图切换">
+            <button class="seg is-active" data-view="source" role="tab" aria-selected="true">源码</button>
+            <button class="seg" data-view="preview" role="tab" aria-selected="false">普通渲染</button>
+          </span>
+          <span class="badge" data-badge>markdown-source.md</span>
         </div>
-<pre class="source"><span class="fm">---
+<pre class="source" data-view="source"><span class="fm">---
 archetype: business-document
 title: 幂等键改 UUIDv7 — Markdown 写法
 lang: zh-CN
@@ -239,6 +340,44 @@ function keyFor(req: Request) {
 <span class="tag">&lt;/details&gt;</span>
 
 <span class="adm">&gt; 注意：中文「注意：」开头的引用也会被识别成提示框。</span></pre>
+        <div class="preview" data-view="preview" hidden>
+<!-- BEGIN PLAIN: vanilla remark render of markdown-source.md (no TDR uplift) -->
+<h1>支付重复扣款复盘</h1>
+<p>线上在 09:14 出现首笔重复扣款。下面这份文档用 <strong>TDR-flavored Markdown</strong> 写成，左边是你写的源码，右边是 <code>tdr format</code> 转出来的结果。散文、列表、表格照常用 Markdown；提示、代码引用、清单按约定写，会自动 uplift 成 TDR 组件。</p>
+<h2>根因</h2>
+<p>幂等键由服务端在收到请求后生成，无法跨重试保持一致。客户端重试时拿到的是<strong>两个不同的 key</strong>，于是被当成两笔独立支付。</p>
+<blockquote>
+<p>[!WARNING]
+这个缺陷在低并发下几乎不可见 — 只有重试窗口与首次写入重叠时才触发。</p>
+</blockquote>
+<p>代码引用直接写在 fence 的 info 里，带上 <code>file:path:lines</code>：</p>
+<pre><code class="language-ts">function keyFor(req: Request) {
+  return hash(req.body) + Date.now()   // ← Date.now() 让 key 每次都不同
+}
+</code></pre>
+<h2>决策</h2>
+<p>需要精确控制组件时，直接写原生 TDR 标签 —— 它们在 Markdown 里原样透传：</p>
+<h2>收尾清单</h2>
+<p>GFM task list 会变成 <code>&#x3C;chk></code>：</p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" checked disabled> 紧急止血：临时关闭重试</li>
+<li class="task-list-item"><input type="checkbox" checked disabled> 定位根因</li>
+<li class="task-list-item"><input type="checkbox" disabled> 上线 UUIDv7 方案</li>
+<li class="task-list-item"><input type="checkbox" disabled> 补回归测试</li>
+</ul>
+<details>
+<summary>展开看完整的修复 diff</summary>
+<p><code>&#x3C;details></code> 会变成可折叠的 <code>&#x3C;c></code>。</p>
+<pre><code class="language-ts">function keyFor(req: Request) {
+  return req.headers['idempotency-key']   // 由客户端 UUIDv7 提供
+}
+</code></pre>
+</details>
+<blockquote>
+<p>注意：中文「注意：」开头的引用也会被识别成提示框。</p>
+</blockquote>
+<!-- END PLAIN -->
+        </div>
       </section>
 
       <!-- ───────────────────────── RIGHT: rendered ─────────────────────── -->
@@ -288,5 +427,33 @@ function keyFor(req: Request) {
     </div>
 
     <script src="https://unpkg.com/@talon-ui/doc-runtime/dist/talon-doc-runtime.iife.js"></script>
+    <script>
+      // Left-pane view toggle: 源码 ⇄ 普通 Markdown 渲染.
+      (() => {
+        const left = document.getElementById('left')
+        const segs = left.querySelectorAll('.toggle .seg')
+        const views = left.querySelectorAll('[data-view]')
+        const badge = left.querySelector('[data-badge]')
+        const BADGE = { source: 'markdown-source.md', preview: '普通 Markdown 渲染' }
+
+        function show(view) {
+          segs.forEach((s) => {
+            const on = s.dataset.view === view
+            s.classList.toggle('is-active', on)
+            s.setAttribute('aria-selected', String(on))
+          })
+          views.forEach((v) => {
+            // The toggle controls only the two left-pane views; the <pre>/<div>
+            // both carry data-view, the .toggle buttons do too — skip buttons.
+            if (v.classList.contains('seg')) return
+            v.hidden = v.dataset.view !== view
+          })
+          if (badge) badge.textContent = BADGE[view] ?? ''
+        }
+
+        segs.forEach((s) => s.addEventListener('click', () => show(s.dataset.view)))
+        show('source')
+      })()
+    </script>
   </body>
 </html>

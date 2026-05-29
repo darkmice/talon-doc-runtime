@@ -14,11 +14,11 @@ On first use, read `references/canvas.md` for the full writing principles — th
 Before delivering a non-trivial document, run the two checkers:
 
 ```bash
-node scripts/critique.mjs   path/to/your.html   # structural & style lint
-node scripts/balance.mjs path/to/your.html # visual budget (heavy components vs <h2>)
+npx tdr critique path/to/your.html   # structural & style lint
+npx tdr balance  path/to/your.html   # visual budget (heavy components vs <h2>)
 ```
 
-If a checker reports errors, fix them before handing the document to the user. Warnings are advisory but worth reviewing.
+`tdr` ships as a `bin` on `@talon-ui/doc-runtime`. After `npm install` (or `npx -p @talon-ui/doc-runtime …`) the three subcommands are available: `tdr format`, `tdr critique`, `tdr balance`. If a checker reports errors, fix them before handing the document to the user. Warnings are advisory but worth reviewing.
 
 ## Output Mode
 
@@ -28,6 +28,23 @@ Choose one of two modes:
 2. **Standalone HTML**: write a complete `.html` file that loads `dist/talon-doc-runtime.iife.js`.
 
 Default to standalone HTML when creating a local artifact for review. Default to an embedded fragment when integrating with an existing Talon product surface.
+
+## Input Flavor: HTML vs. Markdown
+
+TDR accepts two input flavors — pick by audience:
+
+- **Direct HTML** (the DSL): write `<d>` / `<call>` / `<src>` / `<branch>` etc. directly. Most expressive, lowest token cost when many components are needed. Use when the user asks for an HTML artifact.
+- **TDR-flavored Markdown**: write normal Markdown with five lightweight conventions — GFM admonitions (`> [!NOTE]` / `> 注意：…`) become `<call>`, code fences with `file:path:lines` become `<src>`, GFM task lists become `<chk>`, `<details>/<summary>` become `<c>`, YAML frontmatter sets archetype/title/theme. Use when the user asks for "a markdown doc" or hands you `.md` input.
+
+Convert Markdown → HTML with the bundled CLI:
+
+```bash
+npx tdr format docs/spec.md -o spec.html             # full standalone HTML
+npx tdr format docs/spec.md --fragment > body.html   # body fragment only
+npx tdr format docs/spec.md --archetype editorial-longform
+```
+
+Markdown conventions are documented in `docs/markdown-flavor.md`. Native TDR tags **always** work inside Markdown — the L1+L2 transform leaves them untouched. Mix freely.
 
 ## Core Rules
 
@@ -218,6 +235,19 @@ setArchetype('my-style')
 
 - `references/canvas.md` — full writing principles. Read on first use.
 - `references/lineage.md` — read this only when the user is *iterating on TDR itself* (adding a renderer, changing a CSS class, syncing docs after a runtime change). Most document-authoring sessions do not need it.
-- `scripts/critique.mjs` — structural & style lint for one TDR HTML file (ref/id, Markdown residue, callout count, decision verdict, prose bridges).
-- `scripts/balance.mjs` — visual budget check (top-level heavy components ≤ 1.5 × `<h2>` count).
+- `scripts/critique.mjs` — structural & style lint for one TDR HTML file (ref/id, Markdown residue, callout count, decision verdict, prose bridges). Run as `tdr critique`.
+- `scripts/balance.mjs` — visual budget check (top-level heavy components ≤ 1.5 × `<h2>` count). Run as `tdr balance`.
 - `assets/talon-doc-runtime.iife.js` — the compiled runtime, copy next to standalone HTML outputs.
+
+### When the user gives you Markdown
+
+Read `docs/markdown-flavor.md` for the full conversion spec. Quick recap:
+
+- YAML frontmatter (`---` block at top) sets `archetype` / `title` / `lang` / `theme`.
+- `> [!NOTE]` / `> [!WARNING]` / `> 注意：` / `> NOTE:` → `<call>`.
+- Code fences with `file:path:lines` info → `<src>`.
+- GFM task lists → `<chk>` / `<ck>`.
+- `<details><summary>…</summary>…</details>` → `<c>`.
+- Direct TDR tags (`<d>`, `<branch>`, etc.) pass through untouched — mix freely.
+
+Convert with `tdr format input.md [-o out.html]`.

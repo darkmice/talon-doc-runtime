@@ -157,7 +157,7 @@ Bug 报告尤其要给**具体的复现轨迹**：
 
 ## 11. 撰写细则（避免低级失误）
 
-- **这是 HTML，不是 Markdown。** 不要写 `## 标题`、` ```代码 ```、`**粗体**`、`- 列表`。用 `<h2>` / `<cb>` / `<strong>` / `<ul><li>`。
+- **这是 HTML，不是 Markdown** — 除非用户明确要 `.md` 输入。直接产出 TDR HTML 时不要写 `## 标题`、` ```代码 ```、`**粗体**`、`- 列表`，用 `<h2>` / `<cb>` / `<strong>` / `<ul><li>`。若用户要 Markdown 输入，则按 `docs/markdown-flavor.md` 写：admonition、`file:path:lines` 代码块、task list 这些约定都会被 `tdr format` 自动 uplift；原生 TDR 标签也可以混在 Markdown 里。
 - **短属性优先。** DSL 提供 `s` / `t` / `v` / `k` / `c` / `d` 等短别名就是为了让 Agent 输出紧凑。`<d s="bad" v="P0" t="...">` 总比 `<decision status="rejected" verdict="P0" title="...">` 好。
 - **属性 vs 槽内容。** 纯文本能塞进属性时用属性（`<step t="..." d="...">`）；需要 `<strong>` / `<code>` / 内联链接时改写为带子元素的形式（`<step t="...">正文里有 <code>token</code> 这种东西</step>`）。
 - **引号一致。** 中文引号 `"..."` 不要出现在属性里，会被 HTML 解析器截断；属性内用 ASCII 双引号或不引用。
@@ -166,8 +166,8 @@ Bug 报告尤其要给**具体的复现轨迹**：
 
 ## 12. 自检（交付前）
 
-- 顶层重组件计数 ≤ 1.5 × `<h2>` 数？(`scripts/balance.mjs` 会算)
-- 每个 `<ref to="X">` 都有目标 `<src id="X">` 或 `<c id="X">`？(`scripts/critique.mjs` 会查)
+- 顶层重组件计数 ≤ 1.5 × `<h2>` 数？(`tdr balance file.html` 会算)
+- 每个 `<ref to="X">` 都有目标 `<src id="X">` 或 `<c id="X">`？(`tdr critique file.html` 会查)
 - 每个 `<d s="approved">` 都有至少一条相应的 `<d s="rejected">` 解释为什么不是其它？
 - 每个 P0/P1 issue 都有 verdict (`v=`) 吗？
 - Bug 类 `<call k="bad">` 后面跟着 `<c>` 复现链路了吗？

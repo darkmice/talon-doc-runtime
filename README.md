@@ -14,6 +14,7 @@
 - **代码即证据**：`<src p="file:line-line" l="ts">` 渲染出折叠的源码块，配可点击的行号、复制按钮、内联注解、跨段引用跳转。
 - **完整暗色模式**：OKLCH 调色板，浅色/深色都经过手工调过感知亮度，避免"暗色模式 = 把背景调成黑"这种廉价做法。
 - **零依赖、单 IIFE**：编译后约 220 KB（含 highlight.js 子集），无 Vue / React / Lit。
+- **Markdown 输入路径**：`tdr format input.md -o doc.html` 把"轻量 Markdown + 几条约定（admonition、`file:path` 代码块、task list）"自动转成完整 TDR HTML。原生 TDR 标签可以混写在 Markdown 里。
 
 ## 快速开始
 
@@ -242,6 +243,39 @@ pnpm skill:pack         # 验证 + 打包到 dist/skill/talon-doc-runtime.skill
 
 状态属性 `s` / `k` 接受语义值：`ok`、`bad`、`warn`、`note`、`info`、`done`、`active`、`accent`。常见别名（`approved` / `rejected` / `success` / `danger` / `exploring` / `pending` / `p0` / `p1` / `p2` / `blocked` / `at-risk` ...）会被自动规范化。
 
+## Markdown 输入
+
+不想直接写 HTML 标签？写 Markdown，让 `tdr format` 自动转：
+
+```bash
+npm install @talon-ui/doc-runtime
+npx tdr format docs/spec.md -o spec.html
+```
+
+支持 GFM + 五条语义增强约定：
+
+| Markdown 写法 | 转成 |
+|---|---|
+| `> [!NOTE]` / `> [!WARNING]` / `> [!CAUTION]` ... | `<call k="…">` |
+| `> NOTE: …` / `> 注意：…` | `<call k="note">` |
+| ` ```ts file:src/auth.ts:8-12` | `<src p="src/auth.ts:8-12" l="ts">` |
+| `- [x] done` / `- [ ] todo` | `<chk>` + `<ck k="true">` / `<ck>` |
+| `<details><summary>X</summary>…</details>` | `<c t="X">…</c>` |
+| YAML frontmatter `archetype:` / `title:` / `theme:` | 写入 `<html>` 属性 |
+
+原生 TDR 标签（`<d>`、`<branch>`、`<myth>` 等）直接写在 Markdown 里也能跑 — 转换器不会动它们。完整规范见 [docs/markdown-flavor.md](docs/markdown-flavor.md)。
+
+代码里调用：
+
+```ts
+import { mdToTdr } from '@talon-ui/doc-runtime/markdown'
+
+const { html, frontmatter } = await mdToTdr(markdownString, {
+  document: true,
+  enrich: async (frag, ctx) => /* optional LLM-driven semantic uplift */ frag,
+})
+```
+
 ## Archetype 系统
 
 一份 DSL，多套视觉。在根元素上挂 `data-archetype` 选择风格：
@@ -316,6 +350,7 @@ talon-doc-runtime/
 - **[references/canvas.md](references/canvas.md)** — 写作准则（视觉预算、组件选型、状态契约）。
 - **[references/lineage.md](references/lineage.md)** — 改完组件后如何回流到契约层。
 - **[docs/protocol.md](docs/protocol.md)** — 完整 DSL 协议，包括所有标签的属性、子标签、行为细节。
+- **[docs/markdown-flavor.md](docs/markdown-flavor.md)** — TDR-flavored Markdown 规范（`tdr format` 接受的 Markdown 写法 + L1/L2 转换规则）。
 - **[docs/architecture.md](docs/architecture.md)** — runtime、host、Agent 三方的责任边界。
 - **[docs/talon-doc-runtime-formats-css-brief.md](docs/talon-doc-runtime-formats-css-brief.md)** — CSS class 与 token 契约。
 

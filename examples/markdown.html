@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="zh-CN" data-archetype="business-document">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Talon Doc Runtime — Markdown 转换对照</title>
+    <meta name="description" content="左边是 TDR-flavored Markdown 源码，右边是 tdr format 转出来的、由 runtime 实时渲染的结构化文档。" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://darkmice.github.io/talon-doc-runtime/markdown.html" />
+    <meta property="og:title" content="Talon Doc Runtime — Markdown → 结构化文档（左右对照）" />
+    <meta property="og:description" content="同一份内容：左边写 Markdown（admonition / file:path 代码块 / task list / details），右边是 tdr format 自动 uplift 出的 TDR 组件。" />
+    <meta property="og:image" content="https://darkmice.github.io/talon-doc-runtime/og.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <style>
+      :root {
+        --col-gap: 0px;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        color: #1a1a1a;
+        background: #fafafa;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { color: #e8e8e8; background: #0f0f0f; }
+      }
+
+      /* ── page header ── */
+      .page-head {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 40px 24px 8px;
+      }
+      .page-head h1 {
+        font-size: 26px;
+        margin: 0 0 8px;
+        letter-spacing: -0.01em;
+      }
+      .page-head p {
+        margin: 0;
+        max-width: 64ch;
+        line-height: 1.6;
+        opacity: 0.75;
+        font-size: 15px;
+      }
+      .page-head .back {
+        display: inline-block;
+        margin-bottom: 18px;
+        font-size: 13px;
+        text-decoration: none;
+        color: inherit;
+        opacity: 0.55;
+      }
+      .page-head .back:hover { opacity: 0.9; }
+
+      /* ── the split ── */
+      .split {
+        max-width: 1240px;
+        margin: 24px auto 64px;
+        padding: 0 24px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--rule, rgba(0,0,0,0.1));
+        border: 1px solid var(--rule, rgba(0,0,0,0.1));
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      @media (prefers-color-scheme: dark) {
+        .split { --rule: rgba(255,255,255,0.12); }
+      }
+      @media (max-width: 860px) {
+        .split { grid-template-columns: 1fr; }
+      }
+
+      .pane {
+        background: #ffffff;
+        min-width: 0;
+      }
+      @media (prefers-color-scheme: dark) {
+        .pane { background: #161616; }
+      }
+
+      .pane-head {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 18px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        background: #f5f5f5;
+        border-bottom: 1px solid var(--rule, rgba(0,0,0,0.08));
+        backdrop-filter: blur(6px);
+      }
+      @media (prefers-color-scheme: dark) {
+        .pane-head { background: #1d1d1d; --rule: rgba(255,255,255,0.1); }
+      }
+      .pane-head .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+      }
+      .pane-head .dot.src { background: #8b8b8b; }
+      .pane-head .dot.out { background: #3b82f6; }
+      .pane-head .badge {
+        margin-left: auto;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+        opacity: 0.55;
+        font-size: 11px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      /* ── left: markdown source ── */
+      .source {
+        margin: 0;
+        padding: 22px 20px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: 12.5px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        word-break: break-word;
+        tab-size: 2;
+        color: #2b2b2b;
+      }
+      @media (prefers-color-scheme: dark) {
+        .source { color: #cfcfcf; }
+      }
+      /* simple markdown syntax tint */
+      .source .h { color: #c2410c; font-weight: 600; }
+      .source .fm { color: #7c3aed; }
+      .source .fence { color: #0d9488; }
+      .source .tag { color: #2563eb; }
+      .source .adm { color: #b45309; font-weight: 600; }
+      .source .task { color: #16a34a; }
+      @media (prefers-color-scheme: dark) {
+        .source .h { color: #fb923c; }
+        .source .fm { color: #c4b5fd; }
+        .source .fence { color: #5eead4; }
+        .source .tag { color: #93c5fd; }
+        .source .adm { color: #fcd34d; }
+        .source .task { color: #86efac; }
+      }
+
+      /* ── right: rendered output ── */
+      .output {
+        padding: 8px 4px;
+      }
+      /* The rendered side is a real .tdr-doc; relax its measure so it fills
+         the column rather than centering on a narrow editorial measure. */
+      .output .tdr-doc {
+        max-width: none;
+        padding: 14px 20px 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page-head">
+      <a class="back" href="./index.html">← 所有 demo</a>
+      <h1>Markdown → 结构化文档</h1>
+      <p>
+        同一份内容，左边是你写的 <strong>TDR-flavored Markdown</strong>，右边是
+        <code>tdr format</code> 转出来、由 runtime 实时渲染的结果。
+        admonition、带 <code>file:path:lines</code> 的代码块、task list、<code>&lt;details&gt;</code>
+        会自动 uplift 成 <code>&lt;call&gt;</code> / <code>&lt;src&gt;</code> /
+        <code>&lt;chk&gt;</code> / <code>&lt;c&gt;</code>；原生 TDR 标签（如 <code>&lt;d&gt;</code>）原样透传。
+      </p>
+    </header>
+
+    <div class="split">
+      <!-- ───────────────────────── LEFT: source ───────────────────────── -->
+      <section class="pane">
+        <div class="pane-head">
+          <span class="dot src"></span> Markdown 源码
+          <span class="badge">markdown-source.md</span>
+        </div>
+<pre class="source"><span class="fm">---
+archetype: business-document
+title: 幂等键改 UUIDv7 — Markdown 写法
+lang: zh-CN
+---</span>
+
+<span class="h"># 支付重复扣款复盘</span>
+
+线上在 09:14 出现首笔重复扣款。下面这份文档用 **TDR-flavored Markdown** 写成，左边是你写的源码，右边是 `tdr format` 转出来的结果。散文、列表、表格照常用 Markdown；提示、代码引用、清单按约定写，会自动 uplift 成 TDR 组件。
+
+<span class="h">## 根因</span>
+
+幂等键由服务端在收到请求后生成，无法跨重试保持一致。客户端重试时拿到的是**两个不同的 key**，于是被当成两笔独立支付。
+
+<span class="adm">&gt; [!WARNING]
+&gt; 这个缺陷在低并发下几乎不可见 — 只有重试窗口与首次写入重叠时才触发。</span>
+
+代码引用直接写在 fence 的 info 里，带上 `file:path:lines`：
+
+<span class="fence">```ts file:src/payment/idempotency.ts:42-46</span>
+function keyFor(req: Request) {
+  return hash(req.body) + Date.now()   // ← Date.now() 让 key 每次都不同
+}
+<span class="fence">```</span>
+
+<span class="h">## 决策</span>
+
+需要精确控制组件时，直接写原生 TDR 标签 —— 它们在 Markdown 里原样透传：
+
+<span class="tag">&lt;d s="approved" v="已采纳" t="幂等键改客户端生成的 UUIDv7"&gt;
+  &lt;because&gt;服务端生成无法跨重试保持一致。&lt;/because&gt;
+  &lt;so&gt;客户端生成 UUIDv7 并透传，重试天然去重。&lt;/so&gt;
+&lt;/d&gt;</span>
+
+<span class="h">## 收尾清单</span>
+
+GFM task list 会变成 `&lt;chk&gt;`：
+
+<span class="task">- [x] 紧急止血：临时关闭重试
+- [x] 定位根因
+- [ ] 上线 UUIDv7 方案
+- [ ] 补回归测试</span>
+
+<span class="tag">&lt;details&gt;
+&lt;summary&gt;展开看完整的修复 diff&lt;/summary&gt;</span>
+
+`&lt;details&gt;` 会变成可折叠的 `&lt;c&gt;`。
+
+<span class="fence">```ts</span>
+function keyFor(req: Request) {
+  return req.headers['idempotency-key']   // 由客户端 UUIDv7 提供
+}
+<span class="fence">```</span>
+
+<span class="tag">&lt;/details&gt;</span>
+
+<span class="adm">&gt; 注意：中文「注意：」开头的引用也会被识别成提示框。</span></pre>
+      </section>
+
+      <!-- ───────────────────────── RIGHT: rendered ─────────────────────── -->
+      <section class="pane">
+        <div class="pane-head">
+          <span class="dot out"></span> tdr format → 渲染结果
+          <span class="badge">tdr format --fragment</span>
+        </div>
+        <div class="output">
+          <main class="tdr-doc">
+<!-- BEGIN GENERATED: `node scripts/tdr.mjs format examples/markdown-source.md --fragment` -->
+<h1>支付重复扣款复盘</h1>
+<p>线上在 09:14 出现首笔重复扣款。下面这份文档用 <strong>TDR-flavored Markdown</strong> 写成，左边是你写的源码，右边是 <code>tdr format</code> 转出来的结果。散文、列表、表格照常用 Markdown；提示、代码引用、清单按约定写，会自动 uplift 成 TDR 组件。</p>
+<h2>根因</h2>
+<p>幂等键由服务端在收到请求后生成，无法跨重试保持一致。客户端重试时拿到的是<strong>两个不同的 key</strong>，于是被当成两笔独立支付。</p>
+<call k="warn"><p>这个缺陷在低并发下几乎不可见 — 只有重试窗口与首次写入重叠时才触发。</p></call>
+<p>代码引用直接写在 fence 的 info 里，带上 <code>file:path:lines</code>：</p>
+<src id="src-payment-idempotency-ts-42-46" p="src/payment/idempotency.ts:42-46" l="ts"><pre><code class="language-ts">function keyFor(req: Request) {
+  return hash(req.body) + Date.now()   // ← Date.now() 让 key 每次都不同
+}</code></pre></src>
+<h2>决策</h2>
+<p>需要精确控制组件时，直接写原生 TDR 标签 —— 它们在 Markdown 里原样透传：</p>
+<d s="approved" v="已采纳" t="幂等键改客户端生成的 UUIDv7">
+  <because>服务端生成无法跨重试保持一致。</because>
+  <so>客户端生成 UUIDv7 并透传，重试天然去重。</so>
+</d>
+<h2>收尾清单</h2>
+<p>GFM task list 会变成 <code>&#x3C;chk></code>：</p>
+<chk>
+<ck k="true">紧急止血：临时关闭重试</ck>
+<ck k="true">定位根因</ck>
+<ck>上线 UUIDv7 方案</ck>
+<ck>补回归测试</ck>
+</chk>
+<c t="展开看完整的修复 diff">
+<p><code>&#x3C;details></code> 会变成可折叠的 <code>&#x3C;c></code>。</p>
+<pre><code class="language-ts">function keyFor(req: Request) {
+  return req.headers['idempotency-key']   // 由客户端 UUIDv7 提供
+}
+</code></pre>
+</c>
+<call k="note"><p>中文「注意：」开头的引用也会被识别成提示框。</p></call>
+<!-- END GENERATED -->
+          </main>
+        </div>
+      </section>
+    </div>
+
+    <script src="https://unpkg.com/@talon-ui/doc-runtime/dist/talon-doc-runtime.iife.js"></script>
+  </body>
+</html>

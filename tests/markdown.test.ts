@@ -115,11 +115,22 @@ describe('mdToTdr', () => {
       expect(b.html).toContain('p="src/b.ts:5"')
     })
 
-    it('leaves an ordinary fenced block as <pre><code>', async () => {
+    it('wraps an ordinary fenced block in <cb> (not <src>)', async () => {
+      // A lang-only fence (no file:path) becomes a <cb> so the runtime gives it
+      // the full code-block treatment (frame + highlight + copy), rather than a
+      // bare unstyled <pre>.
       const md = '```js\nconsole.log("hi")\n```'
       const { html } = await mdToTdr(md, { document: false })
+      expect(html).toContain('<cb l="js">')
       expect(html).toContain('<pre><code class="language-js">')
       expect(html).not.toContain('<src')
+    })
+
+    it('wraps a no-language fence in a plain <cb>', async () => {
+      const md = '```\nplain text diagram\n```'
+      const { html } = await mdToTdr(md, { document: false })
+      expect(html).toContain('<cb>')
+      expect(html).toContain('<pre><code>plain text diagram')
     })
   })
 

@@ -144,7 +144,7 @@ export function generateUUIDv7() { /* … */ }
 
 **识别规则**：info string 里第一个匹配 `<path>.<ext>` 的子串（可选跟 `:行号` 或 `:起-止`）会被作为 `p=` 属性。前缀 `file:` / `path=` 可加可不加。
 
-**普通代码块**（info 只有语言）不会被转：
+**普通代码块**（info 只有语言、无路径）会被包成 `<cb>`：
 
 ```markdown
 \`\`\`js
@@ -152,7 +152,7 @@ console.log('hi')
 \`\`\`
 ```
 
-→ `<pre><code class="language-js">`，TDR 主题渲染但不挂 `<src>` 的折叠 / 行号 UI。
+→ `<cb l="js"><pre><code class="language-js">…</code></pre></cb>`。`<cb>` 让 runtime 给它完整的代码块外观（语法高亮 + 复制按钮 + 主题边框），但不挂 `<src>` 的折叠 / 行号 / 路径头。无语言的 ` ``` ` 块同样包成 `<cb>`（不高亮）。
 
 ### 3. Task list → `<chk>`/`<ck>`
 

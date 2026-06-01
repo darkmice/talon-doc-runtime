@@ -96,6 +96,7 @@ export async function mdToTdr(
     .use(extractFrontmatter, { sink: frontmatter, warnings })
     .use(promoteAdmonitions, { warnings })
     .use(promoteSourceCodeBlocks, { warnings })
+    .use(promotePlainCodeBlocks)
     .use(promoteTaskLists, { warnings })
     .use(promoteDetailsSummary)
     .use(remarkRehype, { allowDangerousHtml: true })
@@ -309,6 +310,29 @@ function makeId(seed: string): string {
     .slice(0, 48)
 }
 
+// ─── L2: plain code fences → <cb> ──────────────────────────────────────────
+//
+// A fence with only a language (no file:path — those already became <src>) is
+// wrapped in <cb> so the runtime gives it the full code-block treatment:
+// syntax highlighting + copy button + themed frame. Without this it would stay
+// a bare <pre><code>, which the TDR theme renders as unstyled monospace text.
+//
+// Runs AFTER promoteSourceCodeBlocks — by then <src> fences are already html
+// nodes, so the only `code` nodes left here are plain ones.
+const promotePlainCodeBlocks: Plugin<[], Root> = () => (tree) => {
+  visit(tree, 'code', (node: Code, idx, parent) => {
+    if (!parent || typeof idx !== 'number') return
+    const lang = node.lang ?? ''
+    const langClass = lang ? ` class="language-${escapeAttr(lang)}"` : ''
+    const codeHtml = `<pre><code${langClass}>${escapeText(node.value)}</code></pre>`
+    const replacement: Html = {
+      type: 'html',
+      value: `<cb${lang ? ` l="${escapeAttr(lang)}"` : ''}>${codeHtml}</cb>`,
+    }
+    parent.children.splice(idx, 1, replacement)
+  })
+}
+
 // ─── L2: GFM task lists → <chk>/<ck> ───────────────────────────────────────
 
 const promoteTaskLists: Plugin<[{ warnings: string[] }], Root> = () => (tree) => {
@@ -399,4 +423,61 @@ function extractFirstHeading(fragment: string): string | null {
   const m = fragment.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
   if (!m) return null
   return m[1].replace(/<[^>]+>/g, '').trim() || null
+}
+
+// ─── Plain Markdown render (NO TDR uplift) ─────────────────────────────────
+//
+// A vanilla remark→rehype pass with none of the L2 plugins, used to show what
+// the SAME markdown looks like in a generic viewer (GitHub README): admonitions
+// stay blockquotes, task lists stay bare checkboxes, code fences stay <pre>.
+//
+// Unknown TDR custom tags (<d>/<because>/<src>/<call>…) are DROPPED, mirroring
+// GitHub's HTML sanitiser — so a decision block simply doesn't appear. Standard
+// HTML (e.g. <details>) is left native. Frontmatter is stripped, not rendered.
+
+// Standard tags a real markdown viewer renders natively. Anything else is a TDR
+// custom tag and gets dropped.
+const STD_HTML_TAGS = new Set([
+  'details', 'summary', 'a', 'b', 'i', 'em', 'strong', 'code', 'pre', 'br',
+  'hr', 'img', 'ul', 'ol', 'li', 'p', 'div', 'span', 'blockquote', 'table',
+  'thead', 'tbody', 'tr', 'th', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'kbd', 'sup', 'sub', 'mark', 'del', 'ins',
+])
+
+const dropCustomTags: Plugin<[], Root> = () => (tree) => {
+  const walk = (node: { children?: RootContent[] }) => {
+    if (!node.children) return
+    node.children = node.children.filter((child) => {
+      if (child.type === 'html') {
+        const tag = (child as Html).value
+          .match(/^<\/?\s*([a-zA-Z][\w-]*)/)?.[1]
+          ?.toLowerCase()
+        if (tag && !STD_HTML_TAGS.has(tag)) return false
+      }
+      walk(child as { children?: RootContent[] })
+      return true
+    })
+  }
+  walk(tree)
+}
+
+/** SAME markdown, rendered by a generic viewer (no TDR uplift). */
+export async function mdToPlainHtml(markdown: string): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pipeline: any = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkFrontmatter, ['yaml'])
+    .use(stripFrontmatterNode)
+    .use(dropCustomTags)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeStringify, { allowDangerousHtml: true })
+  const file = await pipeline.process(markdown)
+  return String(file)
+}
+
+// Drop the frontmatter yaml node (without parsing it into anything) so the
+// plain render doesn't print the --- block as a paragraph.
+const stripFrontmatterNode: Plugin<[], Root> = () => (tree) => {
+  tree.children = tree.children.filter((n) => n.type !== 'yaml')
 }

@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="zh-CN" data-archetype="business-document">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Talon Doc Runtime — Playground</title>
+    <meta name="description" content="在线 playground：左边输入 TDR-flavored Markdown 或 TDR HTML，右边实时渲染成结构化文档。" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://darkmice.github.io/talon-doc-runtime/playground.html" />
+    <meta property="og:title" content="Talon Doc Runtime — 在线 Playground" />
+    <meta property="og:description" content="左边输入 Markdown 或 TDR HTML，右边实时渲染。预置示例、Markdown/HTML 切换、主题与 archetype 切换、一键复制完整 HTML。" />
+    <meta property="og:image" content="https://darkmice.github.io/talon-doc-runtime/og.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+
+    <style>
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        color: #1a1a1a;
+        background: #fafafa;
+        display: flex;
+        flex-direction: column;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { color: #e8e8e8; background: #0f0f0f; }
+      }
+
+      /* ── top bar ── */
+      .bar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 10px 18px;
+        border-bottom: 1px solid var(--rule, rgba(0,0,0,0.1));
+        background: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        .bar { background: #161616; --rule: rgba(255,255,255,0.12); }
+      }
+      .bar .brand {
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: -0.01em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .bar .brand a { color: inherit; text-decoration: none; opacity: 0.55; font-weight: 500; font-size: 13px; }
+      .bar .brand a:hover { opacity: 0.9; }
+      .bar .spacer { flex: 1 1 auto; }
+      .bar label { font-size: 12px; opacity: 0.6; margin-right: 4px; }
+      .bar select, .bar button {
+        font: inherit;
+        font-size: 12.5px;
+        padding: 5px 10px;
+        border-radius: 7px;
+        border: 1px solid var(--rule, rgba(0,0,0,0.16));
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+      .bar select:hover, .bar button:hover { border-color: rgba(127,127,127,0.5); }
+
+      /* segmented toggle (Markdown / HTML) */
+      .seg-group {
+        display: inline-flex;
+        gap: 2px;
+        padding: 2px;
+        border-radius: 8px;
+        background: rgba(127,127,127,0.14);
+      }
+      .seg-group button {
+        border: 0;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12.5px;
+        font-weight: 600;
+        opacity: 0.6;
+        background: transparent;
+      }
+      .seg-group button.is-active {
+        opacity: 1;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+      }
+      @media (prefers-color-scheme: dark) {
+        .seg-group button.is-active { background: #3a3a3a; box-shadow: none; }
+      }
+      .seg-group button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      /* ── split ── */
+      .split {
+        flex: 1 1 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-height: 0;
+      }
+      @media (max-width: 820px) {
+        .split { grid-template-columns: 1fr; grid-auto-rows: minmax(50vh, auto); }
+      }
+      .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+      .pane + .pane { border-left: 1px solid var(--rule, rgba(0,0,0,0.1)); }
+      @media (prefers-color-scheme: dark) { .pane + .pane { --rule: rgba(255,255,255,0.12); } }
+      @media (max-width: 820px) {
+        .pane + .pane { border-left: 0; border-top: 1px solid var(--rule, rgba(0,0,0,0.1)); }
+      }
+
+      .pane-head {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 14px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        opacity: 0.7;
+        border-bottom: 1px solid var(--rule, rgba(0,0,0,0.08));
+        background: #f5f5f5;
+      }
+      @media (prefers-color-scheme: dark) {
+        .pane-head { background: #1d1d1d; --rule: rgba(255,255,255,0.1); }
+      }
+      .pane-head .status {
+        margin-left: auto;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 500;
+        font-size: 11px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .pane-head .status.ok { color: #16a34a; }
+      .pane-head .status.err { color: #dc2626; }
+
+      /* editor */
+      textarea {
+        flex: 1 1 auto;
+        width: 100%;
+        resize: none;
+        border: 0;
+        outline: none;
+        padding: 16px 18px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        tab-size: 2;
+        color: #1a1a1a;
+        background: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        textarea { color: #e8e8e8; background: #141414; }
+      }
+
+      /* output */
+      .render-scroll { flex: 1 1 auto; overflow: auto; }
+      .render-scroll .tdr-doc { max-width: none; padding: 18px 22px 40px; }
+
+      /* plain markdown render — deliberately generic GitHub-README look, so it
+         contrasts with the TDR render of the same source. */
+      .plain-render {
+        padding: 20px 24px 40px;
+        font-size: 14px;
+        line-height: 1.65;
+        color: #24292f;
+      }
+      @media (prefers-color-scheme: dark) { .plain-render { color: #c9d1d9; } }
+      .plain-render > :first-child { margin-top: 0; }
+      .plain-render h1, .plain-render h2, .plain-render h3 { line-height: 1.25; margin: 1.4em 0 0.5em; font-weight: 650; }
+      .plain-render h1 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid rgba(127,127,127,0.3); }
+      .plain-render h2 { font-size: 1.25em; padding-bottom: 0.3em; border-bottom: 1px solid rgba(127,127,127,0.3); }
+      .plain-render p { margin: 0 0 1em; }
+      .plain-render a { color: #0969da; }
+      @media (prefers-color-scheme: dark) { .plain-render a { color: #58a6ff; } }
+      .plain-render code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88em; padding: 0.15em 0.4em; border-radius: 5px; background: rgba(127,127,127,0.16); }
+      .plain-render pre { background: rgba(127,127,127,0.1); padding: 12px 14px; border-radius: 8px; overflow: auto; font-size: 12.5px; line-height: 1.5; }
+      .plain-render pre code { background: none; padding: 0; }
+      .plain-render blockquote { margin: 0 0 1em; padding: 0.2em 1em; opacity: 0.85; border-left: 3px solid rgba(127,127,127,0.4); }
+      .plain-render ul, .plain-render ol { padding-left: 1.4em; margin: 0 0 1em; }
+      .plain-render ul.contains-task-list { list-style: none; padding-left: 0.2em; }
+      .plain-render .task-list-item input { margin-right: 0.5em; }
+      .plain-render table { border-collapse: collapse; margin: 0 0 1em; }
+      .plain-render th, .plain-render td { border: 1px solid rgba(127,127,127,0.3); padding: 5px 10px; }
+
+      .render-error {
+        margin: 16px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid #f0a;
+        background: rgba(255,0,80,0.06);
+        color: #dc2626;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12.5px;
+        white-space: pre-wrap;
+      }
+      .loading {
+        padding: 40px;
+        text-align: center;
+        opacity: 0.5;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <span class="brand">
+        ⛏ Talon Doc Runtime
+        <a href="./index.html">← demos</a>
+      </span>
+
+      <label for="preset">示例</label>
+      <select id="preset" aria-label="预置示例">
+        <!-- options injected by JS so each can carry its input type -->
+      </select>
+
+      <span class="seg-group" id="render" role="tablist" aria-label="渲染输出">
+        <button data-render="tdr" class="is-active" role="tab" aria-selected="true">TDR 渲染</button>
+        <button data-render="plain" role="tab" aria-selected="false"
+          title="普通 Markdown 渲染（GitHub README 那样）">普通 Markdown</button>
+      </span>
+
+      <span class="spacer"></span>
+
+      <label for="archetype">archetype</label>
+      <select id="archetype" aria-label="archetype">
+        <option value="business-document">business-document</option>
+        <option value="editorial-longform">editorial-longform</option>
+      </select>
+
+      <label for="theme">主题</label>
+      <select id="theme" aria-label="主题">
+        <option value="auto">跟随系统</option>
+        <option value="light">浅色</option>
+        <option value="dark">深色</option>
+      </select>
+
+      <button id="copy" title="复制为完整 standalone HTML">复制 HTML</button>
+    </div>
+
+    <div class="split">
+      <section class="pane">
+        <div class="pane-head">
+          <span id="input-label">输入</span>
+        </div>
+        <textarea id="input" spellcheck="false" autocomplete="off"
+          placeholder="在这里输入 TDR-flavored Markdown 或 TDR HTML…"></textarea>
+      </section>
+
+      <section class="pane">
+        <div class="pane-head">
+          渲染结果
+          <span id="status" class="status">就绪</span>
+        </div>
+        <div class="render-scroll" id="render-scroll">
+          <p class="loading">加载运行时…</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- TDR runtime. We DON'T want the IIFE's footer auto-mount to scan the
+         whole document (it would try to enhance the <textarea>'s text); instead
+         we mount the output pane explicitly. The footer mount() on document.body
+         is harmless here because the only TDR tags live inside #output, but we
+         re-mount #output after every render anyway. -->
+    <script src="https://unpkg.com/@talon-ui/doc-runtime/dist/talon-doc-runtime.iife.js"></script>
+
+    <script type="module">
+      // ── load the browser markdown bundle ──
+      // mdToTdr      : Markdown → TDR HTML (our L1+L2 uplift)
+      // mdToPlainHtml: Markdown → vanilla HTML (GitHub-README style, no uplift)
+      // Local dev / Pages: same-origin ./markdown.browser.js (copied at deploy).
+      // Fallback: unpkg, once a version shipping the browser bundle is published.
+      let mdToTdr, mdToPlainHtml
+      const SOURCES = [
+        './markdown.browser.js',
+        'https://unpkg.com/@talon-ui/doc-runtime/dist/markdown.browser.js',
+      ]
+      for (const src of SOURCES) {
+        try { ({ mdToTdr, mdToPlainHtml } = await import(src)); break } catch (_) { /* next */ }
+      }
+
+      const $ = (id) => document.getElementById(id)
+      const input = $('input')
+      const scroll = $('render-scroll')
+      const status = $('status')
+      const TDR = window.TalonDocRuntime
+
+      // The toggle switches the RIGHT-SIDE RENDER, not the input. The input type
+      // is fixed by the chosen example.
+      let renderMode = 'tdr'   // 'tdr' | 'plain'
+      let currentType = 'html' // 'md' | 'html' — input flavor of the loaded example
+
+      // ── presets ──────────────────────────────────────────────────────────
+      // Each carries `type`: 'md' (markdown source) or 'html' (TDR HTML source).
+      const PRESETS = {
+        'md-decision': {
+          label: 'Markdown · 决策复盘',
+          type: 'md',
+          text: `---
+archetype: business-document
+title: 幂等键改 UUIDv7
+---
+
+# 支付重复扣款复盘
+
+线上在 09:14 出现首笔重复扣款。下面这份用 **TDR-flavored Markdown** 写。
+
+> [!WARNING]
+> 这个缺陷只有重试窗口与首次写入重叠时才触发。
+
+代码引用带上 \`file:path:lines\`：
+
+\`\`\`ts file:src/payment/idempotency.ts:42-44
+function keyFor(req) {
+  return hash(req.body) + Date.now()  // ← key 每次都不同
+}
+\`\`\`
+
+## 决策
+
+需要精确控制时，直接写原生 TDR 标签（原样透传）：
+
+<d s="approved" v="已采纳" t="幂等键改客户端生成的 UUIDv7">
+  <because>服务端生成无法跨重试保持一致。</because>
+  <so>客户端生成 UUIDv7 透传，重试天然去重。</so>
+</d>
+
+## 收尾
+
+- [x] 紧急止血
+- [x] 定位根因
+- [ ] 上线 UUIDv7 方案
+`,
+        },
+        'html-bug': {
+          label: 'TDR HTML · Bug 报告',
+          type: 'html',
+          text: `<h1>并发 refresh 误撤销 token 家族</h1>
+<p class="tdr-subtitle">两个 tab 同时刷新时，整个 token 家族被撤销。</p>
+
+<ms>
+  <m v="P0" t="严重度"></m>
+  <m v="2" t="受影响接口"></m>
+  <m v="~3h" t="预估工时"></m>
+</ms>
+
+<d s="bad" v="P0" t="并发 refresh 误撤销 token 家族">
+  <p>第二个并发请求被误判为 token 重放，撤销整个家族。</p>
+  <p>证据见 <ref to="rotate" x="refresh.ts:8"></ref>。</p>
+</d>
+
+<call k="warn" t="边界">
+  <p>只在两个 tab 的刷新窗口重叠时触发，低并发下几乎不可见。</p>
+</call>
+
+<c t="复现链路" o="true">
+  <steps>
+    <step s="ok" t="Tab A" d="消费 T1，拿到 T2"></step>
+    <step s="bad" t="Tab B" d="再次用 T1，被当作重放"></step>
+    <step s="bad" t="结果" d="T2 被家族撤销，两个 tab 都失效"></step>
+  </steps>
+
+  <src id="rotate" p="src/auth/refresh.ts:8-14" l="ts">
+    <pre><code>export async function rotateRefreshToken(token) {
+  const record = await findToken(token)
+  if (record.consumedAt) revokeFamily(record.familyId)
+  return issueTokenPair(record.userId)
+}</code></pre>
+    <note>已消费 token 再次出现 ≠ 一定是攻击 — 可能只是并发。</note>
+  </src>
+</c>`,
+        },
+        'html-compare': {
+          label: 'TDR HTML · 方案对比',
+          type: 'html',
+          text: `<h1>状态管理选型</h1>
+
+<cmp t="Redux vs. 信号 (signals)">
+  <pro t="Redux">
+    <ul><li>生态成熟、中间件丰富</li><li>时间旅行调试</li></ul>
+  </pro>
+  <con t="Redux">
+    <ul><li>样板代码多</li><li>心智负担重</li></ul>
+  </con>
+</cmp>
+
+<myth>
+  <wrong>信号就是把全局变量换个名字。</wrong>
+  <right>信号是细粒度依赖追踪 — 只有读过该值的视图才会重渲染。</right>
+</myth>
+
+<analogy s="信号" sd="自动浇水的滴灌" t="手动 setState" td="拿水管浇整片地"
+  why="滴灌只把水送到需要的根部；手动浇水会淋湿一切（无关组件也重渲染）。"></analogy>`,
+        },
+        'md-minimal': {
+          label: 'Markdown · 最小起步',
+          type: 'md',
+          text: `# 标题
+
+普通段落，**强调**、\`行内代码\`、[链接](https://example.com)。
+
+> [!NOTE]
+> 这是一个提示框。
+
+- [x] 已完成
+- [ ] 待办
+
+| 列 A | 列 B |
+|---|---|
+| 1 | 2 |
+`,
+        },
+      }
+
+      // ── rendering ─────────────────────────────────────────────────────────
+      // The right side renders the SAME input two ways, chosen by renderMode:
+      //   tdr   → mdToTdr → our structured document (runtime-enhanced)
+      //   plain → mdToPlainHtml → vanilla GitHub-README HTML (TDR tags dropped)
+      // A TDR-HTML example fed to mdToTdr renders identically to direct injection
+      // (native tags pass through), so both example flavors work in tdr mode.
+      let renderToken = 0
+      async function render() {
+        const myToken = ++renderToken
+        const text = input.value
+
+        try {
+          if (renderMode === 'plain') {
+            if (!mdToPlainHtml) throw new Error('Markdown 引擎未加载（请用本地 http server 打开，file:// 会被 CORS 拦截）')
+            const html = await mdToPlainHtml(text)
+            if (myToken !== renderToken) return
+            scroll.innerHTML = '<div class="plain-render"></div>'
+            scroll.firstElementChild.innerHTML = html
+            setStatus('ok', '普通 Markdown 渲染')
+          } else {
+            // tdr render
+            let body
+            if (mdToTdr) {
+              const { html } = await mdToTdr(text, { document: false })
+              if (myToken !== renderToken) return
+              body = html
+            } else {
+              body = text // raw passthrough fallback when engine missing
+            }
+            scroll.innerHTML = '<main class="tdr-doc"></main>'
+            const main = scroll.firstElementChild
+            main.innerHTML = body
+            TDR?.mount?.(main)
+            setStatus('ok', currentType === 'md' ? 'Markdown → TDR ✓' : 'TDR HTML ✓')
+          }
+        } catch (e) {
+          showError(e)
+        }
+      }
+
+      function showError(e) {
+        scroll.innerHTML = ''
+        const box = document.createElement('div')
+        box.className = 'render-error'
+        box.textContent = '渲染出错：\n' + (e?.stack || e?.message || String(e))
+        scroll.appendChild(box)
+        setStatus('err', '出错')
+      }
+
+      function setStatus(kind, msg) {
+        status.className = 'status ' + kind
+        status.textContent = msg
+      }
+
+      // debounce typing
+      let timer = 0
+      function scheduleRender() {
+        clearTimeout(timer)
+        timer = setTimeout(render, 180)
+      }
+      input.addEventListener('input', scheduleRender)
+
+      // ── render-output toggle (TDR 渲染 / 普通 Markdown 渲染) ─────────────────
+      const renderGroup = $('render')
+      renderGroup.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-render]')
+        if (!btn || btn.disabled) return
+        setRenderMode(btn.dataset.render)
+        render()
+      })
+      function setRenderMode(next) {
+        renderMode = next
+        renderGroup.querySelectorAll('button').forEach((b) => {
+          const on = b.dataset.render === next
+          b.classList.toggle('is-active', on)
+          b.setAttribute('aria-selected', String(on))
+        })
+      }
+
+      // For TDR-HTML examples a "普通 Markdown 渲染" is meaningless (the source
+      // is HTML, not markdown) — disable it and force tdr.
+      function applyTypeConstraints() {
+        const plainBtn = renderGroup.querySelector('button[data-render="plain"]')
+        const isMd = currentType === 'md'
+        plainBtn.disabled = !isMd
+        plainBtn.title = isMd
+          ? '普通 Markdown 渲染（GitHub README 那样）'
+          : '该示例是 TDR HTML 源，普通 Markdown 渲染不适用'
+        if (!isMd && renderMode === 'plain') setRenderMode('tdr')
+      }
+
+      // ── presets ────────────────────────────────────────────────────────────
+      const presetSel = $('preset')
+      for (const [key, p] of Object.entries(PRESETS)) {
+        const opt = document.createElement('option')
+        opt.value = key
+        opt.textContent = p.label
+        presetSel.appendChild(opt)
+      }
+      presetSel.addEventListener('change', () => loadPreset(presetSel.value))
+      function loadPreset(key) {
+        const p = PRESETS[key]
+        if (!p) return
+        presetSel.value = key
+        currentType = p.type
+        $('input-label').textContent = '输入 · ' + (p.type === 'md' ? 'Markdown' : 'TDR HTML')
+        input.value = p.text
+        applyTypeConstraints()
+        render()
+      }
+
+      // ── archetype + theme ───────────────────────────────────────────────────
+      $('archetype').addEventListener('change', (e) => {
+        TDR?.setArchetype?.(e.target.value)
+        document.documentElement.setAttribute('data-archetype', e.target.value)
+        render() // archetype switch may need re-mount for reveal etc.
+      })
+      $('theme').addEventListener('change', (e) => {
+        TDR?.setTheme?.(e.target.value)
+      })
+
+      // ── copy as standalone HTML ──────────────────────────────────────────────
+      $('copy').addEventListener('click', async () => {
+        const archetype = $('archetype').value
+        const theme = $('theme').value
+        const themeAttr = theme === 'auto' ? '' : ` data-tdr-theme="${theme}"`
+        const doc = `<!doctype html>
+<html lang="zh-CN" data-archetype="${archetype}"${themeAttr}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TDR document</title>
+  </head>
+  <body>
+    <main class="tdr-doc">
+${(scroll.querySelector('.tdr-doc, .plain-render')?.innerHTML || '').trim()}
+    </main>
+    <script src="https://unpkg.com/@talon-ui/doc-runtime/dist/talon-doc-runtime.iife.js"><\/script>
+  </body>
+</html>`
+        try {
+          await navigator.clipboard.writeText(doc)
+          const btn = $('copy')
+          const old = btn.textContent
+          btn.textContent = '已复制 ✓'
+          setTimeout(() => (btn.textContent = old), 1400)
+        } catch (_) {
+          // clipboard may be blocked (non-secure context) — fall back to a prompt
+          window.prompt('复制下面的 HTML：', doc)
+        }
+      })
+
+      // ── boot ────────────────────────────────────────────────────────────────
+      if (!mdToTdr) {
+        setStatus('err', 'Markdown 引擎加载失败 — 请用本地 http server 打开')
+      }
+      loadPreset('html-bug')
+    </script>
+  </body>
+</html>

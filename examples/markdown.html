@@ -414,10 +414,9 @@ function keyFor(req: Request) {
 </chk>
 <c t="展开看完整的修复 diff">
 <p><code>&#x3C;details></code> 会变成可折叠的 <code>&#x3C;c></code>。</p>
-<pre><code class="language-ts">function keyFor(req: Request) {
+<cb l="ts"><pre><code class="language-ts">function keyFor(req: Request) {
   return req.headers['idempotency-key']   // 由客户端 UUIDv7 提供
-}
-</code></pre>
+}</code></pre></cb>
 </c>
 <call k="note"><p>中文「注意：」开头的引用也会被识别成提示框。</p></call>
 <!-- END GENERATED -->

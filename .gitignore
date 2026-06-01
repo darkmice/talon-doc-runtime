@@ -4,3 +4,8 @@ dist/
 *.log
 coverage/
 .turbo/
+
+# Built at Pages-deploy time / copied locally for testing; not committed.
+# Demo pages load the runtime from the unpkg CDN instead.
+examples/markdown.browser.js
+examples/talon-doc-runtime.iife.js

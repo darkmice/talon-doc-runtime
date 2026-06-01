@@ -39,6 +39,8 @@
     "dist/talon-doc-runtime.iife.js.map",
     "dist/markdown.mjs",
     "dist/markdown.mjs.map",
+    "dist/markdown.browser.js",
+    "dist/markdown.browser.js.map",
     "SKILL.md",
     "README.md",
     "AGENTS.md",
@@ -63,6 +65,7 @@
       "types": "./dist/markdown.d.ts",
       "import": "./dist/markdown.mjs"
     },
+    "./markdown.browser": "./dist/markdown.browser.js",
     "./package.json": "./package.json"
   },
   "bin": {

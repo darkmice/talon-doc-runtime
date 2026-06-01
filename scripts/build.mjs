@@ -35,6 +35,21 @@ const markdownCommon = {
   logLevel: 'info',
 }
 
+// ─── Markdown transformer — browser build for the online playground ─────────
+// Same mdToTdr, but with remark/rehype/yaml bundled IN (nothing externalised)
+// and platform:browser so it runs client-side. Used by examples/playground.html.
+const markdownBrowser = {
+  entryPoints: ['src/markdown.ts'],
+  bundle: true,
+  sourcemap: true,
+  minify: true,
+  format: 'esm',
+  platform: 'browser',
+  target: ['es2020'],
+  outfile: 'dist/markdown.browser.js',
+  logLevel: 'info',
+}
+
 await Promise.all([
   build({
     ...runtimeCommon,
@@ -60,4 +75,5 @@ await Promise.all([
     format: 'esm',
     outfile: 'dist/markdown.mjs',
   }),
+  build(markdownBrowser),
 ])

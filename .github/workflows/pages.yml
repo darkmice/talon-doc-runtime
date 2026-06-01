@@ -41,8 +41,25 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      # examples/ 是站点根。脚本引用 unpkg CDN 上的 runtime，
-      # 不依赖仓库 dist/，所以这里不需要 build。
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # The runtime IIFE is loaded from unpkg by most pages, but the online
+      # playground needs the browser markdown bundle (mdToTdr with remark
+      # bundled in). Build it and copy it next to examples/ so the playground
+      # loads it same-origin instead of waiting on an npm publish.
+      - name: Install & build browser markdown bundle
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+          cp dist/markdown.browser.js examples/markdown.browser.js
+
       - name: Upload examples as Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

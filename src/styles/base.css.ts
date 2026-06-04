@@ -1267,10 +1267,17 @@ html[data-archetype] body.tdr-root { background: var(--tdr-bg); }
   }
   .tdr-flow .tdr-arrow { align-self: center; flex-direction: column; }
 
-  /* Wide content keeps its own scroll context instead of widening the page */
-  .tdr-doc table,
-  .tdr-src pre,
-  .tdr-cb pre { overflow-x: auto; }
+  /* A wide native <table> must SCROLL horizontally instead of being clipped.
+     overflow-x:auto alone is a no-op on a display:table box — it grows to its
+     content width. display:block turns the table into a real block scroll
+     container so its right columns stay reachable on a phone. (Code blocks —
+     .tdr-source/.tdr-code <pre> — already scroll from their base rules.) */
+  .tdr-doc table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media (max-width: 480px) {

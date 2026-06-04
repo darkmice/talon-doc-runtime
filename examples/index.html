@@ -3,10 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Talon Doc Runtime — Agent-native structured document runtime</title>
-    <meta name="description" content="Short HTML DSL tags rendered into themed, interactive structured documents — decisions, evidence, branches, risks, timelines. Drop-in runtime for Claude / agent-generated artifacts." />
+    <title>Talon Doc Runtime — 示例预览器 / Responsive preview</title>
+    <meta name="description" content="Short HTML DSL tags rendered into themed, interactive structured documents. Browse every example in a resizable device-preview shell." />
 
-    <!-- Open Graph (Facebook / LinkedIn / 微信 / Slack / Discord ...) -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://darkmice.github.io/talon-doc-runtime/" />
     <meta property="og:title" content="Talon Doc Runtime — Agent-native structured document runtime" />
@@ -14,462 +13,333 @@
     <meta property="og:image" content="https://darkmice.github.io/talon-doc-runtime/og.svg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Talon Doc Runtime — a sample decision card rendered from a one-line DSL tag, surrounded by the runtime's component vocabulary." />
     <meta property="og:site_name" content="Talon Doc Runtime" />
-    <meta property="og:locale" content="en_US" />
 
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Talon Doc Runtime — Agent-native structured document runtime" />
-    <meta name="twitter:description" content="Short HTML DSL tags rendered into themed, interactive documents. Drop-in runtime for Claude / agent-generated artifacts." />
     <meta name="twitter:image" content="https://darkmice.github.io/talon-doc-runtime/og.svg" />
-    <meta name="twitter:image:alt" content="Talon Doc Runtime — a sample decision card rendered from a one-line DSL tag, surrounded by the runtime's component vocabulary." />
 
     <link rel="canonical" href="https://darkmice.github.io/talon-doc-runtime/" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <link rel="preconnect" href="https://unpkg.com" crossorigin />
 
-    <!--
-      The landing chrome below is bespoke, but it deliberately borrows the
-      runtime's own design tokens (--tdr-bg / --tdr-text / --tdr-accent / the
-      Fraunces + ZhiSong type ramp) so the page is visually native to the very
-      system it showcases. The TDR runtime is loaded at the end of <body>; it
-      injects those tokens and also renders the live <d> demo in the hero.
-    -->
     <style>
-      /* ─── Page reset + atmosphere ─────────────────────────────────── */
+      /* The shell reuses the runtime's design tokens (injected by the iife) so
+         it's visually native to the system it previews. Tokens fall back to
+         literal OKLCH values until the runtime loads. */
       *, *::before, *::after { box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
+      :root {
+        --ink: var(--tdr-text, oklch(0.27 0.012 60));
+        --ink-soft: var(--tdr-text-soft, oklch(0.47 0.010 60));
+        --muted: var(--tdr-muted, oklch(0.62 0.010 60));
+        --paper: var(--tdr-bg, oklch(0.992 0.003 95));
+        --surface: var(--tdr-surface, oklch(1 0 0));
+        --surface-muted: var(--tdr-surface-muted, oklch(0.972 0.006 90));
+        --line: var(--tdr-border, oklch(0.91 0.006 80));
+        --line-soft: var(--tdr-border-soft, oklch(0.95 0.005 85));
+        --accent: var(--tdr-accent, oklch(0.62 0.13 235));
+        --accent-strong: var(--tdr-accent-strong, oklch(0.46 0.13 235));
+        --mono: var(--tdr-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+        --display: var(--tdr-font-display, "Fraunces", Georgia, serif);
+        --body: var(--tdr-font-body, "Source Serif 4", Georgia, serif);
+        --rail-w: 264px;
+      }
+      html, body { height: 100%; margin: 0; }
       body {
-        margin: 0;
-        min-height: 100vh;
-        color: var(--tdr-text, oklch(0.27 0.012 60));
+        display: flex; flex-direction: column;
+        color: var(--ink);
         background:
-          radial-gradient(120% 80% at 50% -10%, oklch(0.99 0.012 95 / 0.9), transparent 60%),
-          var(--tdr-bg, oklch(0.992 0.003 95));
-        font-family: var(--tdr-font-body, "Source Serif 4", Georgia, serif);
-        font-size: 16px;
-        line-height: 1.6;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        text-rendering: optimizeLegibility;
-        /* faint paper grain */
-        background-attachment: fixed;
-      }
-      body::before {
-        content: "";
-        position: fixed; inset: 0; z-index: 0; pointer-events: none;
-        opacity: 0.4;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
-        mix-blend-mode: multiply;
-      }
-      .wrap { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 clamp(1.25rem, 5vw, 3.5rem); }
-
-      a { color: inherit; }
-      ::selection { background: var(--tdr-accent, oklch(0.62 0.13 235)); color: #fff; }
-
-      /* ─── Editorial masthead rules (echoes og.svg) ───────────────── */
-      .rule { height: 0; border: 0; border-top: 1.5px solid var(--tdr-text, #1a1812); margin: 0; }
-      .rule.thin { border-top-width: 0.5px; margin-top: 3px; opacity: 0.5; }
-
-      /* ─── Top bar ─────────────────────────────────────────────────── */
-      .topbar {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 1rem; padding: 1.4rem 0 0.9rem;
-        font-family: var(--tdr-font-mono, ui-monospace, monospace);
-        font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
-        color: var(--tdr-text-soft, oklch(0.47 0.010 60));
-      }
-      .topbar .edition { display: inline-flex; align-items: center; gap: 0.55rem; }
-      .topbar .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tdr-accent, oklch(0.62 0.13 235)); box-shadow: 0 0 0 3px oklch(0.62 0.13 235 / 0.16); }
-      .topbar nav { display: flex; gap: 1.4rem; }
-      .topbar nav a { text-decoration: none; opacity: 0.85; transition: opacity 0.18s, color 0.18s; }
-      .topbar nav a:hover { opacity: 1; color: var(--tdr-accent, oklch(0.62 0.13 235)); }
-
-      /* ─── Hero ────────────────────────────────────────────────────── */
-      .hero { padding: clamp(2.5rem, 7vw, 5rem) 0 clamp(2rem, 5vw, 3.5rem); }
-      .hero .eyebrow {
-        font-family: var(--tdr-font-mono, ui-monospace, monospace);
-        font-size: 0.74rem; letter-spacing: 0.22em; text-transform: uppercase;
-        color: var(--tdr-accent-strong, oklch(0.46 0.13 235)); margin: 0 0 1.1rem;
-      }
-      .hero h1 {
-        font-family: var(--tdr-font-display, "Fraunces", Georgia, serif);
-        font-weight: 600;
-        font-size: clamp(2.7rem, 8vw, 5.2rem);
-        line-height: 0.98; letter-spacing: -0.02em;
-        margin: 0 0 1.2rem;
-        color: var(--tdr-text, #1a1812);
-      }
-      .hero h1 .tail { display: block; font-style: italic; font-weight: 400; color: var(--tdr-text-soft, oklch(0.47 0.010 60)); font-size: 0.62em; letter-spacing: -0.01em; margin-top: 0.15em; }
-      .hero .deck {
-        max-width: 46ch; font-size: clamp(1.05rem, 2.4vw, 1.3rem);
-        line-height: 1.55; color: var(--tdr-text-soft, oklch(0.47 0.010 60));
-        margin: 0 0 2rem;
-      }
-      .hero .cta { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
-      .btn {
-        display: inline-flex; align-items: center; gap: 0.5rem;
-        font-family: var(--tdr-font-mono, ui-monospace, monospace);
-        font-size: 0.82rem; letter-spacing: 0.02em; text-decoration: none;
-        padding: 0.7rem 1.15rem; border-radius: 8px; border: 1px solid var(--tdr-border, oklch(0.91 0.006 80));
-        transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s, border-color 0.16s;
-      }
-      .btn.primary { background: var(--tdr-text, #1a1812); color: var(--tdr-bg, #fbf9f4); border-color: var(--tdr-text, #1a1812); }
-      .btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px oklch(0.27 0.012 60 / 0.22); }
-      .btn.ghost { background: var(--tdr-surface, #fff); color: var(--tdr-text, #1a1812); }
-      .btn.ghost:hover { transform: translateY(-2px); border-color: var(--tdr-accent, oklch(0.62 0.13 235)); color: var(--tdr-accent-strong, oklch(0.46 0.13 235)); }
-
-      /* ─── Live "source → render" specimen ─────────────────────────── */
-      .specimen {
-        display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-        gap: 0; margin: clamp(2rem, 5vw, 3rem) 0 0;
-        border: 1px solid var(--tdr-border, oklch(0.91 0.006 80));
-        border-radius: 12px; overflow: hidden;
-        background: var(--tdr-surface, #fff);
-        box-shadow: 0 1px 0 oklch(1 0 0 / 0.6) inset, 0 18px 50px -28px oklch(0.27 0.012 60 / 0.35);
-      }
-      .specimen .pane-label {
-        font-family: var(--tdr-font-mono, ui-monospace, monospace);
-        font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase;
-        color: var(--tdr-muted, oklch(0.62 0.010 60));
-        padding: 0.7rem 1.1rem; border-bottom: 1px solid var(--tdr-border-soft, oklch(0.95 0.005 85));
-        display: flex; align-items: center; justify-content: space-between;
-      }
-      .specimen .src {
-        background: var(--tdr-surface-muted, oklch(0.972 0.006 90));
-        border-right: 1px solid var(--tdr-border, oklch(0.91 0.006 80));
-      }
-      .specimen .src pre {
-        margin: 0; padding: 1.2rem 1.1rem; overflow-x: auto;
-        font-family: var(--tdr-font-mono, ui-monospace, monospace);
-        font-size: 0.8rem; line-height: 1.7; color: var(--tdr-text, #1a1812);
-        white-space: pre;
-      }
-      .specimen .src .tag { color: var(--tdr-accent-strong, oklch(0.46 0.13 235)); }
-      .specimen .src .attr { color: var(--tdr-ok, oklch(0.58 0.13 150)); }
-      .specimen .src .str { color: var(--tdr-bad, oklch(0.60 0.18 25)); }
-      .specimen .src .cmt { color: var(--tdr-muted, oklch(0.62 0.010 60)); font-style: italic; }
-      .specimen .render { min-width: 0; }
-      .specimen .render .render-body { padding: 1.1rem; }
-      /* the live <d> sits in here; the runtime styles it */
-      .specimen .render .tdr-doc { padding: 0; }
-
-      /* ─── Section header ──────────────────────────────────────────── */
-      .section { padding: clamp(3rem, 7vw, 4.5rem) 0 0; }
-      .section-head { display: flex; align-items: baseline; gap: 1rem; margin: 0 0 1.6rem; }
-      .section-head .num {
-        font-family: var(--tdr-font-mono, ui-monospace, monospace);
-        font-size: 0.72rem; letter-spacing: 0.1em; color: var(--tdr-accent-strong, oklch(0.46 0.13 235));
-        padding-top: 0.55rem;
-      }
-      .section-head h2 {
-        font-family: var(--tdr-font-display, "Fraunces", Georgia, serif);
-        font-weight: 600; font-size: clamp(1.7rem, 4vw, 2.4rem); letter-spacing: -0.015em;
-        margin: 0; color: var(--tdr-text, #1a1812);
-      }
-      .section-head .sub { margin-left: auto; max-width: 34ch; font-size: 0.92rem; color: var(--tdr-text-soft, oklch(0.47 0.010 60)); }
-
-      /* ─── Example index grid ──────────────────────────────────────── */
-      .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-      .card {
-        position: relative; display: flex; flex-direction: column;
-        padding: 1.5rem 1.5rem 1.3rem; text-decoration: none; color: inherit;
-        background: var(--tdr-surface, #fff);
-        border: 1px solid var(--tdr-border, oklch(0.91 0.006 80));
-        border-radius: 12px;
-        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s;
+          radial-gradient(120% 70% at 50% -10%, oklch(0.99 0.012 95 / 0.7), transparent 60%),
+          var(--paper);
+        font-family: var(--body); font-size: 15px; line-height: 1.55;
+        -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
         overflow: hidden;
       }
-      .card::before {
-        content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-        background: var(--accent, var(--tdr-accent, oklch(0.62 0.13 235)));
-        transform: scaleY(0); transform-origin: top; transition: transform 0.22s ease;
-      }
-      .card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px -24px oklch(0.27 0.012 60 / 0.4); border-color: color-mix(in oklch, var(--accent, oklch(0.62 0.13 235)) 50%, var(--tdr-border)); }
-      .card:hover::before { transform: scaleY(1); }
-      .card .kicker {
-        display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.9rem;
-        font-family: var(--tdr-font-mono, ui-monospace, monospace);
-        font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase;
-        color: var(--tdr-muted, oklch(0.62 0.010 60));
-      }
-      .card .chip {
-        padding: 0.15rem 0.5rem; border-radius: 999px;
-        background: color-mix(in oklch, var(--accent, oklch(0.62 0.13 235)) 14%, transparent);
-        color: var(--accent-strong, var(--tdr-accent-strong, oklch(0.46 0.13 235)));
-        letter-spacing: 0.08em;
-      }
-      .card h3 {
-        font-family: var(--tdr-font-display, "Fraunces", Georgia, serif);
-        font-weight: 600; font-size: 1.32rem; letter-spacing: -0.01em;
-        margin: 0 0 0.5rem; color: var(--tdr-text, #1a1812);
-      }
-      .card p { margin: 0 0 1.1rem; font-size: 0.93rem; line-height: 1.55; color: var(--tdr-text-soft, oklch(0.47 0.010 60)); flex: 1; }
-      .card .file {
-        display: inline-flex; align-items: center; gap: 0.45rem; margin-top: auto;
-        font-family: var(--tdr-font-mono, ui-monospace, monospace);
-        font-size: 0.74rem; color: var(--tdr-accent-strong, oklch(0.46 0.13 235));
-      }
-      .card .file .arrow { transition: transform 0.18s ease; }
-      .card:hover .file .arrow { transform: translateX(4px); }
+      ::selection { background: var(--accent); color: #fff; }
+      a { color: inherit; }
 
-      /* The conversion card is a <div> (it carries its own links — <a> can't
-         nest). Its title and footer links are styled inline. */
-      .card .card-title-link { color: inherit; text-decoration: none; }
-      .card .card-title-link:hover { color: var(--accent-strong, var(--tdr-accent-strong)); }
-      a.card .file { margin-top: auto; }
-      .srcfiles {
-        margin-top: 1rem; padding-top: 0.9rem;
-        border-top: 1px solid var(--tdr-border-soft, oklch(0.95 0.005 85));
-        display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 0.9rem;
-        font-family: var(--tdr-font-mono, ui-monospace, monospace); font-size: 0.74rem;
+      /* ── Top bar: masthead + device controls ─────────────────────── */
+      .topbar {
+        flex: 0 0 auto;
+        display: flex; align-items: center; gap: 1.25rem;
+        padding: 0.7rem clamp(0.9rem, 2.5vw, 1.6rem);
+        border-bottom: 1.5px solid var(--ink);
+        background: color-mix(in oklch, var(--paper) 86%, transparent);
+        backdrop-filter: blur(8px);
+        position: relative; z-index: 5;
       }
-      .srcfiles-label { letter-spacing: 0.1em; text-transform: uppercase; color: var(--tdr-muted, oklch(0.62 0.010 60)); }
-      .srcfiles a { color: var(--tdr-accent-strong, oklch(0.46 0.13 235)); text-decoration: none; padding: 0.1rem 0; border-bottom: 1px solid transparent; transition: border-color 0.16s; }
-      .srcfiles a:hover { border-bottom-color: currentColor; }
+      .brand { display: inline-flex; align-items: center; gap: 0.6rem; flex: 0 0 auto; }
+      .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px oklch(0.62 0.13 235 / 0.16); }
+      .brand .name { font-family: var(--display); font-weight: 600; font-size: 1.12rem; letter-spacing: -0.01em; }
+      .brand .name .sub { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: block; margin-top: -2px; }
 
-      /* per-card accent hues, drawn from the semantic palette */
-      .card.a-business { --accent: oklch(0.62 0.13 235); --accent-strong: oklch(0.46 0.13 235); }
-      .card.a-editorial { --accent: oklch(0.56 0.16 295); --accent-strong: oklch(0.46 0.16 295); }
-      .card.a-gallery { --accent: oklch(0.58 0.13 150); --accent-strong: oklch(0.44 0.13 150); }
-      .card.a-demo { --accent: oklch(0.68 0.14 70); --accent-strong: oklch(0.5 0.14 70); }
-      .card.a-md { --accent: oklch(0.60 0.18 25); --accent-strong: oklch(0.48 0.18 25); }
-      .card.a-play { --accent: oklch(0.55 0.16 200); --accent-strong: oklch(0.42 0.16 200); }
-      .card.a-type { --accent: oklch(0.5 0.04 60); --accent-strong: oklch(0.38 0.03 60); }
+      .controls { display: flex; align-items: center; gap: 1rem; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
 
-      /* ─── About + quick start ─────────────────────────────────────── */
-      .about { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 2.5rem; align-items: start; }
-      .about > * { min-width: 0; }
-      .about .prose p { font-size: 1.02rem; line-height: 1.65; color: var(--tdr-text-soft, oklch(0.47 0.010 60)); margin: 0 0 1rem; }
-      .about .prose strong { color: var(--tdr-text, #1a1812); font-weight: 600; }
-      .codeblock {
-        background: var(--tdr-text, oklch(0.18 0.006 260)); color: oklch(0.92 0.01 95);
-        border-radius: 12px; overflow: hidden;
-        font-family: var(--tdr-font-mono, ui-monospace, monospace); font-size: 0.78rem; line-height: 1.7;
-        box-shadow: 0 18px 50px -28px oklch(0.27 0.012 60 / 0.5);
+      /* device preset segmented control */
+      .devices { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: var(--surface-muted); border: 1px solid var(--line); }
+      .devices button {
+        appearance: none; cursor: pointer; font: inherit; font-family: var(--mono);
+        font-size: 0.74rem; display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.32rem 0.7rem; border: 0; border-radius: 6px; color: var(--ink-soft);
+        background: transparent; transition: background 0.15s, color 0.15s, box-shadow 0.15s;
       }
-      .codeblock .cb-bar { display: flex; gap: 0.4rem; padding: 0.7rem 0.9rem; border-bottom: 1px solid oklch(1 0 0 / 0.08); }
-      .codeblock .cb-bar i { width: 10px; height: 10px; border-radius: 50%; background: oklch(1 0 0 / 0.18); display: inline-block; }
-      .codeblock pre { margin: 0; padding: 1.1rem; overflow-x: auto; white-space: pre; }
-      .codeblock .tag { color: oklch(0.78 0.12 235); }
-      .codeblock .attr { color: oklch(0.78 0.13 150); }
-      .codeblock .str { color: oklch(0.80 0.13 70); }
-      .codeblock .cmt { color: oklch(0.6 0.01 95); font-style: italic; }
-      .meta-list { margin-top: 1.4rem; border-top: 1px solid var(--tdr-border-soft, oklch(0.95 0.005 85)); }
-      .meta-list .m { display: flex; justify-content: space-between; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--tdr-border-soft, oklch(0.95 0.005 85)); font-size: 0.85rem; }
-      .meta-list .m .k { font-family: var(--tdr-font-mono, ui-monospace, monospace); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tdr-muted, oklch(0.62 0.010 60)); }
-      .meta-list .m .v { color: var(--tdr-text, #1a1812); text-align: right; }
-      .meta-list .m .v a { color: var(--tdr-accent-strong, oklch(0.46 0.13 235)); text-decoration: none; }
-      .meta-list .m .v a:hover { text-decoration: underline; }
+      .devices button:hover { color: var(--ink); }
+      .devices button.is-active { background: var(--surface); color: var(--accent-strong); box-shadow: 0 1px 2px oklch(0.27 0.012 60 / 0.12); }
+      .devices button .px { opacity: 0.6; font-size: 0.66rem; }
 
-      /* ─── Theme switcher row ──────────────────────────────────────── */
-      .switcher { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 1.2rem; }
-      .switcher .label { font-family: var(--tdr-font-mono, ui-monospace, monospace); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tdr-muted, oklch(0.62 0.010 60)); margin-right: 0.4rem; }
-      .switcher button {
-        font-family: var(--tdr-font-mono, ui-monospace, monospace); font-size: 0.76rem; cursor: pointer;
-        padding: 0.4rem 0.8rem; border-radius: 999px;
-        background: var(--tdr-surface, #fff); color: var(--tdr-text, #1a1812);
-        border: 1px solid var(--tdr-border, oklch(0.91 0.006 80)); transition: all 0.16s;
+      /* width slider + readout */
+      .width-ctl { display: inline-flex; align-items: center; gap: 0.6rem; }
+      .width-ctl input[type="range"] {
+        -webkit-appearance: none; appearance: none; width: clamp(90px, 14vw, 200px);
+        height: 4px; border-radius: 999px; background: var(--line); outline: none; cursor: ew-resize;
       }
-      .switcher button:hover { border-color: var(--tdr-accent, oklch(0.62 0.13 235)); color: var(--tdr-accent-strong, oklch(0.46 0.13 235)); }
-
-      /* ─── Footer ──────────────────────────────────────────────────── */
-      .foot { padding: clamp(3rem, 7vw, 4.5rem) 0 3rem; margin-top: clamp(3rem, 7vw, 4.5rem); }
-      .foot .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; padding-top: 1.2rem; font-family: var(--tdr-font-mono, ui-monospace, monospace); font-size: 0.72rem; letter-spacing: 0.06em; color: var(--tdr-text-soft, oklch(0.47 0.010 60)); }
-      .foot a { color: var(--tdr-accent-strong, oklch(0.46 0.13 235)); text-decoration: none; }
-      .foot a:hover { text-decoration: underline; }
-
-      /* ─── Entrance reveal (staggered) ─────────────────────────────── */
-      @media (prefers-reduced-motion: no-preference) {
-        .reveal { opacity: 0; transform: translateY(16px); animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
-        .reveal.d1 { animation-delay: 0.05s; }
-        .reveal.d2 { animation-delay: 0.13s; }
-        .reveal.d3 { animation-delay: 0.21s; }
-        .reveal.d4 { animation-delay: 0.29s; }
-        @keyframes rise { to { opacity: 1; transform: none; } }
+      .width-ctl input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+        background: var(--accent); border: 2px solid var(--surface); box-shadow: 0 1px 3px oklch(0.27 0.012 60 / 0.3); cursor: ew-resize;
       }
-
-      /* ─── Responsive ──────────────────────────────────────────────── */
-      @media (max-width: 760px) {
-        .specimen { grid-template-columns: 1fr; }
-        .specimen .src { border-right: 0; border-bottom: 1px solid var(--tdr-border, oklch(0.91 0.006 80)); }
-        .cards { grid-template-columns: 1fr; }
-        .about { grid-template-columns: 1fr; gap: 1.6rem; }
-        .section-head { flex-wrap: wrap; }
-        .section-head .sub { margin-left: 0; flex-basis: 100%; }
-        .topbar nav { display: none; }
-        /* Monospace specimens must scroll inside their box, not widen the page */
-        .codeblock pre, .specimen .src pre { font-size: 0.72rem; }
-        .meta-list .m { flex-wrap: wrap; }
-        .meta-list .m .v { text-align: left; }
+      .width-ctl input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); cursor: ew-resize; }
+      .width-readout {
+        font-family: var(--mono); font-size: 0.78rem; color: var(--ink);
+        min-width: 6.2rem; text-align: right;
       }
-      /* Code/render panes always keep their own horizontal scroll context */
-      .codeblock, .specimen { max-width: 100%; }
-      .codeblock pre, .specimen .src pre, .render { max-width: 100%; }
+      .width-readout .unit { color: var(--muted); }
+
+      .theme-ctl { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: var(--surface-muted); border: 1px solid var(--line); }
+      .theme-ctl button { appearance: none; cursor: pointer; font: inherit; font-family: var(--mono); font-size: 0.72rem; padding: 0.3rem 0.6rem; border: 0; border-radius: 6px; background: transparent; color: var(--ink-soft); }
+      .theme-ctl button:hover { color: var(--ink); }
+      .theme-ctl button.is-active { background: var(--surface); color: var(--accent-strong); box-shadow: 0 1px 2px oklch(0.27 0.012 60 / 0.12); }
+
+      .gh { font-family: var(--mono); font-size: 0.74rem; text-decoration: none; color: var(--ink-soft); border-bottom: 1px solid transparent; }
+      .gh:hover { color: var(--accent-strong); border-bottom-color: currentColor; }
+
+      /* ── Body: rail + stage ──────────────────────────────────────── */
+      .shell { flex: 1 1 auto; display: flex; min-height: 0; }
+
+      /* left rail: example list */
+      .rail {
+        flex: 0 0 var(--rail-w); width: var(--rail-w); min-width: 0;
+        border-right: 1px solid var(--line);
+        background: color-mix(in oklch, var(--surface) 50%, var(--paper));
+        overflow-y: auto; padding: 0.9rem 0.7rem 2rem;
+      }
+      .rail .rail-label { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); padding: 0.4rem 0.7rem 0.5rem; }
+      .ex {
+        display: block; text-align: left; width: 100%; cursor: pointer;
+        appearance: none; border: 1px solid transparent; border-radius: 10px;
+        background: transparent; color: inherit; font: inherit;
+        padding: 0.7rem 0.8rem; margin-bottom: 0.2rem;
+        transition: background 0.15s, border-color 0.15s, transform 0.12s;
+      }
+      .ex:hover { background: var(--surface); border-color: var(--line-soft); }
+      .ex.is-active { background: var(--surface); border-color: color-mix(in oklch, var(--accent) 45%, var(--line)); box-shadow: 0 1px 0 oklch(1 0 0 / 0.6) inset, 0 6px 18px -12px oklch(0.27 0.012 60 / 0.4); }
+      .ex .ex-top { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+      .ex .chip { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.12rem 0.45rem; border-radius: 999px; background: color-mix(in oklch, var(--ex-accent, var(--accent)) 14%, transparent); color: var(--ex-accent-strong, var(--accent-strong)); }
+      .ex .ex-title { font-family: var(--display); font-weight: 600; font-size: 1.02rem; letter-spacing: -0.01em; }
+      .ex .ex-file { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem; }
+      .ex.is-active .ex-file { color: var(--ex-accent-strong, var(--accent-strong)); }
+      .ex.a-business { --ex-accent: oklch(0.62 0.13 235); --ex-accent-strong: oklch(0.46 0.13 235); }
+      .ex.a-gallery { --ex-accent: oklch(0.58 0.13 150); --ex-accent-strong: oklch(0.44 0.13 150); }
+      .ex.a-editorial { --ex-accent: oklch(0.56 0.16 295); --ex-accent-strong: oklch(0.46 0.16 295); }
+      .ex.a-play { --ex-accent: oklch(0.55 0.16 200); --ex-accent-strong: oklch(0.42 0.16 200); }
+      .ex.a-md { --ex-accent: oklch(0.60 0.18 25); --ex-accent-strong: oklch(0.48 0.18 25); }
+      .ex.a-demo { --ex-accent: oklch(0.68 0.14 70); --ex-accent-strong: oklch(0.5 0.14 70); }
+      .ex.a-type { --ex-accent: oklch(0.5 0.04 60); --ex-accent-strong: oklch(0.38 0.03 60); }
+
+      .rail .rail-foot { margin-top: 1rem; padding: 0.8rem 0.8rem 0; border-top: 1px solid var(--line-soft); font-family: var(--mono); font-size: 0.68rem; color: var(--muted); line-height: 1.7; }
+      .rail .rail-foot a { color: var(--accent-strong); text-decoration: none; }
+      .rail .rail-foot a:hover { text-decoration: underline; }
+
+      /* stage: the resizable viewport */
+      .stage {
+        flex: 1 1 auto; min-width: 0; position: relative;
+        display: flex; flex-direction: column; align-items: center;
+        overflow: auto; padding: clamp(1rem, 3vw, 2.4rem) 1rem 2.4rem;
+        background:
+          repeating-linear-gradient(45deg, oklch(0.27 0.012 60 / 0.012) 0 8px, transparent 8px 16px),
+          var(--surface-muted);
+      }
+      .stage-meta {
+        font-family: var(--mono); font-size: 0.72rem; color: var(--muted);
+        margin-bottom: 0.7rem; display: flex; align-items: center; gap: 0.7rem;
+      }
+      .stage-meta .badge { color: var(--ink); }
+      .stage-meta .badge b { color: var(--accent-strong); font-weight: 600; }
+
+      .frame-wrap {
+        position: relative;
+        width: 100%; /* JS sets an explicit px width; 100% = fit */
+        max-width: 100%;
+        transition: width 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+      }
+      .frame-wrap.is-fit { transition: none; }
+      /* device bezel */
+      .bezel {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--surface);
+        box-shadow: 0 1px 0 oklch(1 0 0 / 0.7) inset, 0 30px 60px -34px oklch(0.27 0.012 60 / 0.5);
+        overflow: hidden;
+        /* the notch/handle bar */
+      }
+      .bezel-bar {
+        height: 30px; display: flex; align-items: center; gap: 6px;
+        padding: 0 12px; border-bottom: 1px solid var(--line-soft);
+        background: var(--surface-muted);
+      }
+      .bezel-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+      .bezel-bar .addr {
+        margin-left: 8px; font-family: var(--mono); font-size: 0.66rem; color: var(--muted);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      iframe.preview {
+        display: block; width: 100%; height: 100%; border: 0; background: var(--paper);
+      }
+      .frame-wrap .bezel { height: calc(100vh - 220px); min-height: 420px; }
+
+      /* drag handle on the right edge of the frame to resize by hand */
+      .handle {
+        position: absolute; top: 50%; right: -7px; transform: translateY(-50%);
+        width: 14px; height: 64px; border-radius: 7px; cursor: ew-resize;
+        background: var(--surface); border: 1px solid var(--line);
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 12px -6px oklch(0.27 0.012 60 / 0.4); z-index: 3;
+        transition: border-color 0.15s, transform 0.12s;
+      }
+      .handle:hover { border-color: var(--accent); }
+      .handle::before { content: ""; width: 2px; height: 26px; border-radius: 2px; background: var(--muted); box-shadow: 3px 0 0 var(--muted), -3px 0 0 var(--muted); }
+      .frame-wrap.is-fit .handle { display: none; }
+
+      /* ── About drawer (the old landing content, on demand) ───────── */
+      .about-toggle {
+        appearance: none; cursor: pointer; font: inherit; font-family: var(--mono);
+        font-size: 0.72rem; padding: 0.3rem 0.7rem; border-radius: 999px;
+        border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+      }
+      .about-toggle:hover { color: var(--accent-strong); border-color: var(--accent); }
+      .about {
+        position: fixed; inset: 0; z-index: 20; display: none;
+        background: oklch(0.27 0.012 60 / 0.35); backdrop-filter: blur(3px);
+      }
+      .about.open { display: block; }
+      .about-panel {
+        position: absolute; top: 0; right: 0; bottom: 0; width: min(560px, 92vw);
+        background: var(--paper); border-left: 1px solid var(--line);
+        box-shadow: -30px 0 60px -30px oklch(0.27 0.012 60 / 0.5);
+        overflow-y: auto; padding: clamp(1.5rem, 4vw, 2.6rem);
+        animation: slidein 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+      }
+      @keyframes slidein { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+      .about-panel h2 { font-family: var(--display); font-weight: 600; font-size: 1.9rem; letter-spacing: -0.015em; margin: 0 0 0.4rem; }
+      .about-panel .eyebrow { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-strong); margin: 0 0 1rem; }
+      .about-panel p { color: var(--ink-soft); line-height: 1.65; margin: 0 0 1rem; }
+      .about-panel strong { color: var(--ink); font-weight: 600; }
+      .about-panel code { font-family: var(--mono); font-size: 0.85em; padding: 0.1em 0.35em; border-radius: 4px; background: var(--surface-muted); }
+      .about-panel .close { position: absolute; top: 1rem; right: 1rem; appearance: none; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 1.1rem; color: var(--ink-soft); }
+      .about-panel .close:hover { color: var(--ink); border-color: var(--accent); }
+      .codeblock { background: var(--tdr-text, oklch(0.18 0.006 260)); color: oklch(0.92 0.01 95); border-radius: 12px; overflow: hidden; font-family: var(--mono); font-size: 0.76rem; line-height: 1.7; margin: 1.2rem 0; }
+      .codeblock pre { margin: 0; padding: 1rem; overflow-x: auto; }
+      .codeblock .tag { color: oklch(0.78 0.12 235); } .codeblock .attr { color: oklch(0.78 0.13 150); } .codeblock .str { color: oklch(0.80 0.13 70); } .codeblock .cmt { color: oklch(0.6 0.01 95); font-style: italic; }
+      .meta-list { margin-top: 1.2rem; border-top: 1px solid var(--line-soft); }
+      .meta-list .m { display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; border-bottom: 1px solid var(--line-soft); font-size: 0.85rem; }
+      .meta-list .m .k { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+      .meta-list .m .v a { color: var(--accent-strong); text-decoration: none; }
+
+      /* ── Mobile: rail collapses to a horizontal scroller ─────────── */
+      @media (max-width: 800px) {
+        body { overflow: auto; }
+        .controls { gap: 0.6rem; }
+        .width-ctl { display: none; } /* presets are enough on small screens */
+        .shell { flex-direction: column; }
+        .rail {
+          flex: 0 0 auto; width: 100%; border-right: 0; border-bottom: 1px solid var(--line);
+          display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.6rem 0.8rem;
+        }
+        .rail .rail-label, .rail .rail-foot { display: none; }
+        .ex { flex: 0 0 auto; width: auto; margin: 0; padding: 0.5rem 0.8rem; }
+        .ex .ex-file { display: none; }
+        .frame-wrap .bezel { height: 70vh; }
+        .handle { display: none; }
+      }
+      @media (max-width: 560px) {
+        .devices button .label { display: none; }
+        .brand .name .sub { display: none; }
+      }
     </style>
   </head>
   <body>
-    <div class="wrap">
+    <!-- ── Top bar ──────────────────────────────────────────────────── -->
+    <header class="topbar">
+      <a class="brand" href="./index.html" style="text-decoration:none;">
+        <span class="dot"></span>
+        <span class="name">Talon Doc Runtime<span class="sub">示例预览器</span></span>
+      </a>
 
-      <!-- ── Top bar ───────────────────────────────────────────────── -->
-      <header class="topbar reveal d1">
-        <span class="edition"><span class="dot"></span> Talon Doc Runtime · 示例总览</span>
-        <nav>
-          <a href="#demos">Demos</a>
-          <a href="#about">关于</a>
-          <a href="https://github.com/darkmice/talon-doc-runtime">GitHub ↗</a>
-        </nav>
-      </header>
-      <hr class="rule" />
-      <hr class="rule thin" />
-
-      <!-- ── Hero ──────────────────────────────────────────────────── -->
-      <section class="hero">
-        <p class="eyebrow reveal d1">Agent-native structured documents</p>
-        <h1 class="reveal d2">Talon Doc Runtime<span class="tail">把短标签 DSL 渲染成有主题、可交互的文档制品</span></h1>
-        <p class="deck reveal d3">Agent 写下 <code style="font-family:var(--tdr-font-mono);">&lt;d&gt;</code> / <code style="font-family:var(--tdr-font-mono);">&lt;evidence&gt;</code> / <code style="font-family:var(--tdr-font-mono);">&lt;branch&gt;</code> 这样的短标签，浏览器加载 runtime 后，DOM 被原地增强成带主题、折叠、代码高亮、引用跳转的可交付文档。同一套 DSL，视觉随 archetype 切换。</p>
-        <div class="cta reveal d4">
-          <a class="btn primary" href="#demos">浏览示例 ↓</a>
-          <a class="btn ghost" href="./playground.html">打开 Playground</a>
-          <a class="btn ghost" href="https://github.com/darkmice/talon-doc-runtime">README ↗</a>
+      <div class="controls">
+        <div class="devices" role="group" aria-label="设备预设">
+          <button data-w="375" title="手机"><span class="label">手机</span><span class="px">375</span></button>
+          <button data-w="768" title="平板"><span class="label">平板</span><span class="px">768</span></button>
+          <button data-w="1280" title="桌面"><span class="label">桌面</span><span class="px">1280</span></button>
+          <button data-w="fit" class="is-active" title="自适应"><span class="label">自适应</span></button>
         </div>
 
-        <!-- live source → render specimen -->
-        <div class="specimen reveal d4">
-          <div class="src">
-            <div class="pane-label"><span>源码 · DSL</span><span>1 行标签</span></div>
-<pre><span class="cmt">&lt;!-- Agent 写下这一个标签 --&gt;</span>
-<span class="tag">&lt;d</span> <span class="attr">s</span>=<span class="str">"bad"</span> <span class="attr">v</span>=<span class="str">"P0"</span>
-   <span class="attr">t</span>=<span class="str">"并发 refresh 误撤销 token"</span><span class="tag">&gt;</span>
-  <span class="tag">&lt;because&gt;</span>两个 tab 同时刷新同一
-  token 时<span class="tag">&lt;/because&gt;</span>
-  <span class="tag">&lt;so&gt;</span>第二个请求撤销了整个
-  token 家族<span class="tag">&lt;/so&gt;</span>
-<span class="tag">&lt;/d&gt;</span></pre>
-          </div>
-          <div class="render">
-            <div class="pane-label"><span>渲染 · 由 runtime 实时增强</span><span>↻ live</span></div>
-            <div class="render-body">
-              <main class="tdr-doc">
-                <d s="bad" v="P0" t="并发 refresh 误撤销 token">
-                  <because>两个 tab 同时刷新同一 token 时</because>
-                  <so>第二个请求撤销了整个 token 家族</so>
-                </d>
-              </main>
+        <div class="width-ctl">
+          <input type="range" id="wrange" min="320" max="1600" step="1" value="1280" aria-label="预览宽度" />
+          <span class="width-readout"><span id="wval">自适应</span></span>
+        </div>
+
+        <div class="theme-ctl" role="group" aria-label="主题">
+          <button data-theme="light" title="浅色">浅</button>
+          <button data-theme="dark" title="深色">深</button>
+          <button data-theme="auto" class="is-active" title="跟随系统">自动</button>
+        </div>
+
+        <button class="about-toggle" id="aboutBtn">关于</button>
+        <a class="gh" href="https://github.com/darkmice/talon-doc-runtime">GitHub ↗</a>
+      </div>
+    </header>
+
+    <!-- ── Shell: rail + stage ──────────────────────────────────────── -->
+    <div class="shell">
+      <nav class="rail" id="rail" aria-label="示例列表">
+        <div class="rail-label">示例 · Examples</div>
+        <!-- buttons injected by JS from the EXAMPLES list -->
+        <div class="rail-foot">
+          npm <a href="https://www.npmjs.com/package/@talon-ui/doc-runtime">@talon-ui/doc-runtime</a><br />
+          <a href="https://github.com/darkmice/talon-doc-runtime#readme">README</a> ·
+          <a href="https://github.com/darkmice/talon-doc-runtime/blob/main/SKILL.md">SKILL.md</a>
+        </div>
+      </nav>
+
+      <main class="stage">
+        <div class="stage-meta">
+          <span class="badge"><b id="metaName">组件总览</b></span>
+          <span id="metaW">视口自适应</span>
+        </div>
+        <div class="frame-wrap is-fit" id="frameWrap">
+          <div class="bezel">
+            <div class="bezel-bar">
+              <i></i><i></i><i></i>
+              <span class="addr" id="addr">showcase.tdr.html</span>
             </div>
+            <iframe class="preview" id="frame" title="示例预览" src="./showcase.tdr.html" loading="lazy"></iframe>
           </div>
+          <div class="handle" id="handle" title="拖动调整宽度" aria-hidden="true"></div>
         </div>
-      </section>
+      </main>
+    </div>
 
-      <!-- ── Example index ─────────────────────────────────────────── -->
-      <section class="section" id="demos">
-        <hr class="rule" />
-        <div class="section-head" style="margin-top:1.6rem;">
-          <span class="num">01</span>
-          <h2>示例总览</h2>
-          <p class="sub">每个示例都是一份用 TDR 渲染的真实页面，从 unpkg CDN 加载同一个 runtime。点开任意一张卡片即可查看。</p>
-        </div>
+    <!-- ── About drawer ─────────────────────────────────────────────── -->
+    <div class="about" id="about">
+      <div class="about-panel">
+        <button class="close" id="aboutClose" aria-label="关闭">×</button>
+        <p class="eyebrow">Agent-native structured documents</p>
+        <h2>这是什么</h2>
+        <p>TDR 让 Agent（Claude 等）输出<strong>短小、语义明确</strong>的 HTML 标签 —— <code>&lt;d&gt;</code> / <code>&lt;src&gt;</code> / <code>&lt;branch&gt;</code> / <code>&lt;evidence&gt;</code> / <code>&lt;myth&gt;</code> 等。浏览器加载 runtime 后，DOM 被<strong>原地增强</strong>为带主题、折叠、代码高亮、引用跳转和受控事件的可交付文档。</p>
+        <p>除了手写 DSL，还能把 <strong>.md / .markdown / .txt / .html / .htm</strong> 文件直接转成 TDR 文档 —— Markdown 的 admonition、代码块、表格、任务列表会自动 uplift 成对等的 TDR 组件。</p>
+        <p>左侧每个示例都是一份用 TDR 渲染的真实页面。用顶部的<strong>设备预设</strong>或<strong>宽度滑块</strong>把预览窗口调到任意宽度，即可看到组件在手机 / 平板 / 桌面下的响应式表现。</p>
 
-        <div class="cards">
-          <a class="card a-business reveal d1" href="./showcase.tdr.html">
-            <div class="kicker"><span class="chip">business-document</span> 旗舰</div>
-            <h3>组件总览</h3>
-            <p>一份「支付链路 P0 复盘」，把 30+ 组件织进一个真实叙事 — 决策、误解澄清、类比、时间线、流程图、分支、评估轨道、风险登记、文件变更、引用证据。看组件在真实文档里的样子。</p>
-            <span class="file">showcase.tdr.html <span class="arrow">→</span></span>
-          </a>
-
-          <a class="card a-gallery reveal d1" href="./gallery.tdr.html">
-            <div class="kicker"><span class="chip">reference</span> 速查</div>
-            <h3>组件参考画廊</h3>
-            <p>穷举式参考 — 18 组、30 节，每个组件独立成节并列出关键变体：全部 5 种提示框、7 种徽章状态、横版与竖版流程图、带嵌套分支的决策树、所有图表与风险表类型。</p>
-            <span class="file">gallery.tdr.html <span class="arrow">→</span></span>
-          </a>
-
-          <a class="card a-editorial reveal d2" href="./showcase.editorial.tdr.html">
-            <div class="kicker"><span class="chip">editorial-longform</span> 杂志风</div>
-            <h3>同一份 DSL · 文学排版</h3>
-            <p>同样的 DSL 内容，渲染成杂志风格 — 衬线正文、首字下沉、非对称栏宽、装饰性分隔符。直观展示「DSL 一致、视觉随 archetype 切换」的核心理念。</p>
-            <span class="file">showcase.editorial.tdr.html <span class="arrow">→</span></span>
-          </a>
-
-          <a class="card a-play reveal d2" href="./playground.html">
-            <div class="kicker"><span class="chip">interactive</span> 实时编辑</div>
-            <h3>在线 Playground</h3>
-            <p>左边输入 Markdown 或 TDR HTML，右边实时渲染。<code style="font-family:var(--tdr-font-mono);font-size:0.85em;">mdToTdr</code> 在浏览器里跑，带预置示例、输入模式切换、主题 / archetype 切换、一键复制 standalone HTML。</p>
-            <span class="file">playground.html <span class="arrow">→</span></span>
-          </a>
-
-          <!-- Not an <a> wrapper: this card holds its own source-file links, and
-               <a> can't nest inside <a>. The title is the primary link; the
-               three fixtures are independent chip links in the footer. -->
-          <div class="card a-md reveal d3">
-            <div class="kicker"><span class="chip">conversion</span> 左右对照</div>
-            <h3><a href="./markdown.html" class="card-title-link">Markdown / 纯文本 / HTML → 结构化文档</a></h3>
-            <p>左边写 TDR-flavored Markdown，右边是 <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">tdr convert</code> 转出来、由 runtime 实时渲染的结果。看 admonition、<code style="font-family:var(--tdr-font-mono);font-size:0.85em;">file:path:lines</code> 代码块、task list、两栏表格、<code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;details&gt;</code> 如何自动 uplift 成 <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;call&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;src&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;kv&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;chk&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;c&gt;</code>。</p>
-            <a class="file" href="./markdown.html">markdown.html <span class="arrow">→</span></a>
-            <div class="srcfiles">
-              <span class="srcfiles-label">转换源文件</span>
-              <a href="./markdown-source.md">markdown-source.md</a>
-              <a href="./txt-source.txt">txt-source.txt</a>
-              <a href="./html-source.html">html-source.html</a>
-            </div>
-          </div>
-
-          <a class="card a-demo reveal d3" href="./demo.html">
-            <div class="kicker"><span class="chip">starter</span> 最小入门</div>
-            <h3>50 行入门 demo</h3>
-            <p>最简单的一页：一个 <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;d&gt;</code> 决策卡 + 一个 <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;c&gt;</code> 折叠区 + 一个 <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;src&gt;</code> 代码引用。理解 DSL 写法的最快路径。</p>
-            <span class="file">demo.html <span class="arrow">→</span></span>
-          </a>
-
-          <a class="card a-type reveal d4" href="./font-compare.html">
-            <div class="kicker"><span class="chip">typography</span> 字体对照</div>
-            <h3>字体对照表</h3>
-            <p>两套 archetype 的显示字体与 CJK 字体并排比较 — Fraunces × LXGW ZhiSong（商务）对 Source Serif 4 × 仿宋（长文）。排版细节的幕后参考。</p>
-            <span class="file">font-compare.html <span class="arrow">→</span></span>
-          </a>
-        </div>
-      </section>
-
-      <!-- ── About + quick start ───────────────────────────────────── -->
-      <section class="section" id="about">
-        <hr class="rule" />
-        <div class="section-head" style="margin-top:1.6rem;">
-          <span class="num">02</span>
-          <h2>这是什么</h2>
-          <p class="sub">让 Agent 用尽可能少的 token，输出结构稳定、视觉成熟、可复用的文档制品。</p>
-        </div>
-
-        <div class="about">
-          <div class="prose reveal d1">
-            <p>TDR 让 Agent（Claude 等）输出<strong>短小、语义明确</strong>的 HTML 标签 — <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;d&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;src&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;branch&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;evidence&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;myth&gt;</code> 等。浏览器加载 runtime 后，DOM 被<strong>原地增强</strong>为带主题、折叠、代码高亮、引用跳转和受控事件的可交付文档。</p>
-            <p>除了手写 DSL，还能把 <strong>.md / .markdown / .txt / .html / .htm</strong> 文件直接转成 TDR 文档 — Markdown 的 admonition、代码块、表格、任务列表会自动 uplift 成对等的 TDR 组件。</p>
-            <p>整套设计语言取自精装技术刊物：暖纸背景、Fraunces 衬线标题、语义化的状态配色，外加跟随系统的深色模式与移动端响应式。</p>
-
-            <div class="switcher">
-              <span class="label">试试切换</span>
-              <button data-act="theme" data-to="light">浅色</button>
-              <button data-act="theme" data-to="dark">深色</button>
-              <button data-act="theme" data-to="auto">跟随系统</button>
-              <button data-act="archetype" data-to="business-document">商务</button>
-              <button data-act="archetype" data-to="editorial-longform">长文</button>
-            </div>
-
-            <div class="meta-list">
-              <div class="m"><span class="k">npm</span><span class="v">@talon-ui/doc-runtime</span></div>
-              <div class="m"><span class="k">repo</span><span class="v"><a href="https://github.com/darkmice/talon-doc-runtime">github.com/darkmice/talon-doc-runtime</a></span></div>
-              <div class="m"><span class="k">skill</span><span class="v">talon-doc-runtime（Anthropic Skills 格式）</span></div>
-              <div class="m"><span class="k">archetypes</span><span class="v">business-document · editorial-longform</span></div>
-              <div class="m"><span class="k">状态</span><span class="v">0.1.x — early</span></div>
-            </div>
-          </div>
-
-          <div class="reveal d2">
-            <div class="codeblock">
-              <div class="cb-bar"><i></i><i></i><i></i></div>
+        <div class="codeblock">
 <pre><span class="cmt"># 1 · 安装</span>
 npm install @talon-ui/doc-runtime
 
@@ -477,50 +347,145 @@ npm install @talon-ui/doc-runtime
 <span class="tag">&lt;html</span> <span class="attr">data-archetype</span>=<span class="str">"business-document"</span><span class="tag">&gt;</span>
   <span class="tag">&lt;body&gt;</span>
     <span class="tag">&lt;main</span> <span class="attr">class</span>=<span class="str">"tdr-doc"</span><span class="tag">&gt;</span>
-      <span class="tag">&lt;h1&gt;</span>Your structured doc<span class="tag">&lt;/h1&gt;</span>
       <span class="tag">&lt;d</span> <span class="attr">s</span>=<span class="str">"bad"</span> <span class="attr">v</span>=<span class="str">"P0"</span> <span class="attr">t</span>=<span class="str">"…"</span><span class="tag">&gt;</span>…<span class="tag">&lt;/d&gt;</span>
     <span class="tag">&lt;/main&gt;</span>
     <span class="cmt">&lt;!-- 3 · 加载 runtime --&gt;</span>
     <span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="str">"…/talon-doc-runtime.iife.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
   <span class="tag">&lt;/body&gt;</span>
 <span class="tag">&lt;/html&gt;</span></pre>
-            </div>
-            <p style="font-size:0.85rem;color:var(--tdr-text-soft);margin-top:1rem;line-height:1.6;">完整标签清单、属性与组件选型指南见 <a href="https://github.com/darkmice/talon-doc-runtime#readme" style="color:var(--tdr-accent-strong);">README</a> 与 <a href="https://github.com/darkmice/talon-doc-runtime/blob/main/SKILL.md" style="color:var(--tdr-accent-strong);">SKILL.md</a>。</p>
-          </div>
         </div>
-      </section>
 
-      <!-- ── Footer ────────────────────────────────────────────────── -->
-      <footer class="foot">
-        <hr class="rule thin" />
-        <hr class="rule" style="margin-top:3px;" />
-        <div class="row">
-          <span>© Talon Doc Runtime · 0.1.x</span>
-          <span>
-            <a href="https://github.com/darkmice/talon-doc-runtime">GitHub</a> ·
-            <a href="https://www.npmjs.com/package/@talon-ui/doc-runtime">npm</a> ·
-            <a href="https://github.com/darkmice/talon-doc-runtime/blob/main/SKILL.md">SKILL.md</a>
-          </span>
+        <div class="meta-list">
+          <div class="m"><span class="k">npm</span><span class="v">@talon-ui/doc-runtime</span></div>
+          <div class="m"><span class="k">repo</span><span class="v"><a href="https://github.com/darkmice/talon-doc-runtime">github.com/darkmice/talon-doc-runtime</a></span></div>
+          <div class="m"><span class="k">archetypes</span><span class="v">business-document · editorial-longform</span></div>
+          <div class="m"><span class="k">状态</span><span class="v">0.1.x — early</span></div>
         </div>
-      </footer>
-
+      </div>
     </div>
 
-    <!-- The runtime: injects --tdr-* tokens + fonts, and renders the live <d> -->
     <script src="https://unpkg.com/@talon-ui/doc-runtime/dist/talon-doc-runtime.iife.js"></script>
     <script>
-      // Wire the bespoke theme/archetype switcher to the runtime API.
-      window.addEventListener('load', () => {
-        const rt = window.TalonDocRuntime;
-        if (!rt) return;
-        document.querySelectorAll('.switcher button').forEach((b) => {
-          b.addEventListener('click', () => {
-            const act = b.dataset.act, to = b.dataset.to;
-            if (act === 'theme' && rt.setTheme) rt.setTheme(to);
-            if (act === 'archetype' && rt.setArchetype) rt.setArchetype(to);
+      (function () {
+        var EXAMPLES = [
+          { file: 'showcase.tdr.html',          name: '组件总览',        chip: 'business', cls: 'a-business' },
+          { file: 'gallery.tdr.html',           name: '组件参考画廊',     chip: 'reference', cls: 'a-gallery' },
+          { file: 'showcase.editorial.tdr.html', name: '同一份 DSL · 长文', chip: 'editorial', cls: 'a-editorial' },
+          { file: 'playground.html',            name: '在线 Playground', chip: 'interactive', cls: 'a-play' },
+          { file: 'markdown.html',              name: 'Markdown/txt/HTML 转换', chip: 'conversion', cls: 'a-md' },
+          { file: 'demo.html',                  name: '50 行入门 demo',   chip: 'starter', cls: 'a-demo' },
+          { file: 'font-compare.html',          name: '字体对照表',       chip: 'typography', cls: 'a-type' },
+        ];
+
+        var rail = document.getElementById('rail');
+        var railFoot = rail.querySelector('.rail-foot');
+        var frame = document.getElementById('frame');
+        var frameWrap = document.getElementById('frameWrap');
+        var addr = document.getElementById('addr');
+        var metaName = document.getElementById('metaName');
+        var metaW = document.getElementById('metaW');
+        var wrange = document.getElementById('wrange');
+        var wval = document.getElementById('wval');
+        var handle = document.getElementById('handle');
+        var current = EXAMPLES[0];
+
+        // build rail
+        EXAMPLES.forEach(function (ex, i) {
+          var b = document.createElement('button');
+          b.className = 'ex ' + ex.cls + (i === 0 ? ' is-active' : '');
+          b.innerHTML = '<div class="ex-top"><span class="chip">' + ex.chip + '</span></div>'
+            + '<div class="ex-title">' + ex.name + '</div>'
+            + '<div class="ex-file">' + ex.file + '</div>';
+          b.addEventListener('click', function () { selectExample(ex, b); });
+          rail.insertBefore(b, railFoot);
+        });
+
+        function selectExample(ex, btn) {
+          current = ex;
+          frame.src = './' + ex.file;
+          addr.textContent = ex.file;
+          metaName.textContent = ex.name;
+          rail.querySelectorAll('.ex').forEach(function (e) { e.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+        }
+
+        // ── width control ──
+        function setWidth(w) {
+          if (w === 'fit' || w == null) {
+            frameWrap.classList.add('is-fit');
+            frameWrap.style.width = '';
+            wval.textContent = '自适应';
+            metaW.textContent = '视口自适应';
+            return;
+          }
+          w = Math.round(w);
+          frameWrap.classList.remove('is-fit');
+          // clamp to the available stage width so it never overflows
+          var stageW = frameWrap.parentElement.clientWidth - 32;
+          var applied = Math.min(w, Math.max(280, stageW));
+          frameWrap.style.width = applied + 'px';
+          wval.innerHTML = w + '<span class="unit"> px</span>';
+          metaW.textContent = (applied < w ? '受限于窗口 · ' : '') + w + ' px 宽';
+          wrange.value = Math.min(w, wrange.max);
+        }
+
+        // device presets
+        document.querySelectorAll('.devices button').forEach(function (b) {
+          b.addEventListener('click', function () {
+            document.querySelectorAll('.devices button').forEach(function (x) { x.classList.remove('is-active'); });
+            b.classList.add('is-active');
+            setWidth(b.dataset.w === 'fit' ? 'fit' : Number(b.dataset.w));
           });
         });
-      });
+        // slider
+        wrange.addEventListener('input', function () {
+          document.querySelectorAll('.devices button').forEach(function (x) { x.classList.remove('is-active'); });
+          setWidth(Number(wrange.value));
+        });
+
+        // drag handle
+        (function () {
+          var dragging = false, startX = 0, startW = 0;
+          handle.addEventListener('pointerdown', function (e) {
+            dragging = true; startX = e.clientX; startW = frameWrap.offsetWidth;
+            frameWrap.classList.remove('is-fit'); frameWrap.style.transition = 'none';
+            handle.setPointerCapture(e.pointerId);
+            document.querySelectorAll('.devices button').forEach(function (x) { x.classList.remove('is-active'); });
+          });
+          handle.addEventListener('pointermove', function (e) {
+            if (!dragging) return;
+            setWidth(startW + (e.clientX - startX) * 2); // ×2: handle is on one side, frame centered
+          });
+          handle.addEventListener('pointerup', function (e) {
+            dragging = false; frameWrap.style.transition = '';
+            try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+          });
+        })();
+
+        // ── theme passthrough: switch the SHELL theme (the iframes carry their
+        //    own runtime, but the shell uses tokens so it should re-theme too) ──
+        document.querySelectorAll('.theme-ctl button').forEach(function (b) {
+          b.addEventListener('click', function () {
+            document.querySelectorAll('.theme-ctl button').forEach(function (x) { x.classList.remove('is-active'); });
+            b.classList.add('is-active');
+            var rt = window.TalonDocRuntime;
+            if (rt && rt.setTheme) rt.setTheme(b.dataset.theme);
+          });
+        });
+
+        // ── about drawer ──
+        var about = document.getElementById('about');
+        document.getElementById('aboutBtn').addEventListener('click', function () { about.classList.add('open'); });
+        document.getElementById('aboutClose').addEventListener('click', function () { about.classList.remove('open'); });
+        about.addEventListener('click', function (e) { if (e.target === about) about.classList.remove('open'); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') about.classList.remove('open'); });
+
+        // start in fit mode
+        setWidth('fit');
+        window.addEventListener('resize', function () {
+          if (!frameWrap.classList.contains('is-fit')) setWidth(Number(wrange.value));
+        });
+      })();
     </script>
   </body>
 </html>

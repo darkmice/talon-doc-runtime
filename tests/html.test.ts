@@ -49,6 +49,14 @@ describe('htmlToTdrFragment — semantic uplift', () => {
     const { fragment } = htmlToTdrFragment(html)
     expect(fragment).toContain('<c t="More" o="true">')
   })
+
+  it('wraps a <pre> code block in <cb> (carrying the language), never <src>', () => {
+    const html = `<body><pre><code class="language-ts">const x = 1</code></pre></body>`
+    const { fragment } = htmlToTdrFragment(html)
+    expect(fragment).toContain('<cb l="ts">')
+    expect(fragment).toContain('<pre><code class="language-ts">const x = 1</code></pre>')
+    expect(fragment).not.toContain('<src')
+  })
 })
 
 describe('convert() — html pipeline', () => {

@@ -1,12 +1,24 @@
 # TDR-flavored Markdown
 
-`tdr format` 把一份 Markdown 文档转成 TDR HTML。它做三件事：
+`tdr convert` 把一份文档转成 TDR HTML。它做三件事：
 
 1. **原子映射**：标题、列表、代码块、强调 — Markdown 该有的全保留，渲染时由 TDR 主题接管视觉。
-2. **语义增强**：识别几条"人写 Markdown 时已经形成的约定俗成"，自动转成 TDR 语义组件（`<call>`、`<src>`、`<c>`、`<chk>`）。
+2. **语义增强**：识别几条"人写 Markdown 时已经形成的约定俗成"，自动转成 TDR 语义组件（`<call>`、`<src>`、`<c>`、`<chk>`、`<kv>`、`<divider>`）。
 3. **frontmatter 配置**：用 YAML frontmatter 设置 archetype、title、theme、lang。
 
 下面是这套规范的完整定义。**Agent 输出 Markdown 时遵守这些约定就能被自动 uplift**，不需要直接写 HTML 标签。
+
+（`tdr format` 仍可用，是 `tdr convert --ext md` 的向后兼容别名。）
+
+## 支持的文件类型
+
+`tdr convert` 按扩展名路由到三条管线：
+
+| 扩展名 | 管线 | 说明 |
+|---|---|---|
+| `.md` / `.markdown` | Markdown | 直接走下文的 L1 + L2 规范。 |
+| `.txt` | 纯文本 → Markdown | 启发式还原结构（空行分段、`-` `*` `•` `·` `N.` / `N)` 识别为列表、4 空格缩进识别为代码块、裸 URL 自动链接），再当 Markdown 处理。 |
+| `.html` / `.htm` | HTML | 解析后抽取主内容（`article` > `main` > `body`），共享 hast uplift（`blockquote` → `<call>`、两列 `table` → `<kv>`、`<pre>` 代码块 → `<cb>`、`details` → `<c>`），再序列化。**注意**：`.html` 里的 `<pre>` 会被包成 `<cb>`（拿到和 Markdown 管线一致的高亮/复制/边框外观），但**不会**升级为 `<src>` —— HTML 没有 fence info 通道携带 `file:path:行号`。 |
 
 ## Frontmatter
 
@@ -43,10 +55,10 @@ theme: auto
 | `` `code` `` | `<code>code</code>` |
 | `[label](url)` | `<a href="url">label</a>` |
 | `- item` / `1. item` | `<ul><li>` / `<ol><li>` |
-| `> quote` | `<blockquote>` |
+| `> quote`（无 marker） | `<call k="note">`（见 L2 第 5 条；带 marker 时映射到对应 `<call>`） |
 | `\`\`\`lang\\n…\\n\`\`\`` | `<pre><code class="language-lang">` |
-| GFM 表格 | `<table>` |
-| `---` | `<hr>` |
+| GFM 表格 | `<table>`（两列且满足保守条件时升级为 `<kv>`，见 L2 第 6 条） |
+| `---` | `<hr>`（紧邻标题上方时升级为 `<divider>`，见 L2 第 7 条） |
 | 原生 HTML（如 `<d>`、`<call>`） | 直接透传 |
 
 **原生 TDR 标签可以直接写在 Markdown 里**。比如想要一个决策卡片：
@@ -64,7 +76,7 @@ theme: auto
 
 ## 语义增强（L2）
 
-下面这五条规则会被自动应用。它们是"约定式"的 — 如果你的 Markdown 已经按这种方式写，输出会更精细。
+下面这几条规则会被自动应用。它们是"约定式"的 — 如果你的 Markdown 已经按这种方式写，输出会更精细。
 
 ### 1. Admonition → `<call>`
 
@@ -114,7 +126,7 @@ theme: auto
 英文识别词：`NOTE`、`TIP`、`IMPORTANT`、`WARNING`、`CAUTION`、`DANGER`、`INFO`。
 中文识别词：`注意`、`提示`、`警告`、`重要`、`风险`、`危险`、`信息`。
 
-**普通 blockquote 不会被转**。只有以 marker 开头的 blockquote 才升级为 `<call>`。
+带 marker 的 blockquote 按上表升级到对应 `<call k>`；**不带 marker 的普通 blockquote** 也会升级，统一转成 `<call k="note">`（见下文第 5 条）。
 
 ### 2. 代码块 info 含路径 → `<src>`
 
@@ -202,7 +214,71 @@ GFM checkbox 列表自动转 `<chk>` + `<ck>`：
 
 → `<c t="这块默认展开" o="true">…</c>`
 
-### 5. 直接写 TDR 标签
+### 5. 普通引用块 → `<call k="note">`
+
+没有任何 marker 的普通 blockquote 也会升级 —— 统一转成 `<call k="note">`：
+
+```markdown
+> 这一段只是一句补充说明，没有写 [!NOTE]，也没有写"注意："。
+```
+
+→
+
+```html
+<call k="note">这一段只是一句补充说明，没有写 [!NOTE]，也没有写"注意："。</call>
+```
+
+带 marker（GFM 或行内约定）时仍按第 1 条映射到对应的 `<call k>`；只有"裸引用"才落到 `note`。
+
+### 6. 两列表格 → `<kv>`
+
+满足保守条件的两列 GFM 表格会升级为 `<kv>` / `<row k v>`（键值清单），其余表格保持 `<table>`：
+
+```markdown
+| 字段 | 值 |
+|---|---|
+| 状态 | 已上线 |
+| 负责人 | 张三 |
+```
+
+→
+
+```html
+<kv>
+  <row k="状态" v="已上线"/>
+  <row k="负责人" v="张三"/>
+</kv>
+```
+
+**升级条件（全部满足才升级，否则保持 `<table>`）**：
+
+- 每一行都**恰好两列**；
+- 正文**不超过 8 行**；
+- 表头第 0 格"像 key"：**≤24 字符、结尾无标点**；
+- 所有单元格都是**简单纯文本**（无行内复杂结构）。
+
+### 7. `---` 紧邻标题 → `<divider>`
+
+`---`（thematicBreak）**紧跟在一个标题正上方**时，连同该标题升级为 `<divider t="标题文本">`：
+
+```markdown
+---
+## 第二部分
+```
+
+→
+
+```html
+<divider t="第二部分"/>
+```
+
+**限制**：
+
+- 只认"在标题**上方**"的 `---`（紧随其后必须是标题）；
+- **H1 例外**：H1 喂给文档标题，不参与此升级；
+- 单独出现、下面不接标题的 `---` 保持 `<hr>`。
+
+### 8. 直接写 TDR 标签
 
 任何想表达"我就要这个具体组件"的地方，直接写原生 TDR 标签即可：
 
@@ -226,24 +302,32 @@ GFM checkbox 列表自动转 `<chk>` + `<ck>`：
 
 ## 输出形态
 
-`tdr format` 默认产生**完整的 `<!doctype html>` 文档**。要嵌入到已有页面里，加 `--fragment`：
+`tdr convert` 默认产生**完整的 `<!doctype html>` 文档**。要嵌入到已有页面里，加 `--fragment`：
 
 ```bash
-tdr format docs/spec.md                  # 完整 HTML
-tdr format docs/spec.md --fragment       # 只有 <body> 里的内容
-tdr format docs/spec.md -o spec.html     # 写到文件
-tdr format docs/spec.md --archetype editorial-longform
-tdr format docs/spec.md --runtime ./local-tdr.iife.js   # 自定义 runtime 脚本路径
+tdr convert docs/spec.md                  # 完整 HTML（按 .md 走 Markdown 管线）
+tdr convert notes.txt                      # .txt → 启发式还原结构 → Markdown
+tdr convert page.html                      # .html → 抽主内容 + hast uplift
+tdr convert docs/spec.md --fragment        # 只有 <body> 里的内容
+tdr convert docs/spec.md -o spec.html      # 写到单个文件（单输入）
+tdr convert a.md b.txt c.html -o out/      # 批量：每个输入写成 out/<base>.html
+tdr convert data.log --ext md              # 强制按指定管线（md / txt / html）
+tdr convert docs/spec.md --archetype editorial-longform
+tdr convert docs/spec.md --runtime ./local-tdr.iife.js   # 自定义 runtime 脚本路径
 ```
+
+`tdr format <file>` 等价于 `tdr convert <file> --ext md`，仅为向后兼容保留。
 
 ## 编程接口
 
-CLI 之外，也可以在自己的代码里调用：
+CLI 之外，也可以在自己的代码里调用。统一入口是 `convert`，按 `ext` 选择管线，返回与 `mdToTdr` 一致的 `TransformResult { html, frontmatter, warnings }`：
 
 ```ts
-import { mdToTdr } from '@talon-ui/doc-runtime/markdown'
+import { convert } from '@talon-ui/doc-runtime/markdown'
 
-const { html, frontmatter, warnings } = await mdToTdr(markdownString, {
+const { html, frontmatter, warnings } = await convert(content, {
+  ext: 'txt',                      // md | markdown | txt | html | htm（不带点）；省略时按 filename 推断
+  filename: 'notes.txt',
   document: true,                  // false → fragment
   defaultArchetype: 'business-document',
   defaultLang: 'zh-CN',
@@ -255,9 +339,11 @@ const { html, frontmatter, warnings } = await mdToTdr(markdownString, {
 })
 ```
 
+`ConvertOptions` 在 `TransformOptions` 基础上扩展了 `{ ext?, filename? }`。只处理 Markdown 时仍可直接 `import { mdToTdr }`（`convert` 在 `.md` 分支就是调它）。两者都从浏览器 bundle `dist/markdown.browser.js` 导出。
+
 `enrich` 是异步钩子。它接收**已经过 L1+L2 转换**的 HTML 片段和 frontmatter / 原文上下文，返回升级后的 HTML。典型实现：调用 Claude，给一段 system prompt 说明"把这些段落识别为 `<d>` / `<myth>` / `<contrast>`"，让它产出更结构化的输出。
 
-CLI 暂时**不直接暴露 `--enrich`**（避免硬绑定 LLM 提供商）。需要 enrichment 的人在自己的工作流里 `import { mdToTdr }` 自行实现。
+CLI 暂时**不直接暴露 `--enrich`**（避免硬绑定 LLM 提供商）。需要 enrichment 的人在自己的工作流里 `import { convert }` / `import { mdToTdr }` 自行实现。
 
 ## 关于 Markdown 写作风格
 

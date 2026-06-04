@@ -2,10 +2,12 @@
 //
 // Parse arbitrary HTML, pull out the main content (article > main > body), and
 // run the SHARED L2 uplift on the hast tree: admonition/plain blockquote →
-// <call>, two-column table → <kv>, details/summary → <c>. Standard block
-// elements (h1-h6 / p / ul / table / pre / a / img …) pass through and get
-// skinned by the archetype CSS. Code blocks become plain <cb> — path/line
-// <src> uplift for HTML is intentionally out of v1 (no fence-info channel).
+// <call>, two-column table → <kv>, <pre> code block → <cb> (so it gets the
+// runtime's framed/highlighted/copyable treatment, same as the Markdown path),
+// details/summary → <c>. Other standard block elements (h1-h6 / p / ul / table
+// / a / img …) pass through and get skinned by the archetype CSS. Path/line
+// <src> uplift for HTML is intentionally out of v1 (no fence-info channel), so
+// code blocks land as plain <cb>, never <src>.
 
 import { unified } from 'unified'
 import rehypeParse from 'rehype-parse'
@@ -43,6 +45,7 @@ export function htmlToTdrFragment(
   const main = extractMain(tree)
   upliftBlockquotes(main)
   upliftTables(main)
+  upliftCodeBlocks(main)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stringifier: any = unified().use(rehypeStringify, { allowDangerousHtml: true })
@@ -149,6 +152,46 @@ function upliftTables(tree: Root): void {
     node.properties = kvEl.properties
     node.children = kvEl.children
   })
+}
+
+// ─── <pre> code block → <cb> ────────────────────────────────────────────────
+// Wrap a top-level <pre> in a <cb> so the runtime applies the framed/highlight/
+// copy treatment, matching the Markdown pipeline's promotePlainCodeBlocks. The
+// language (from a child <code class="language-…">) is carried onto <cb l>. No
+// path/line <src> uplift — HTML has no fence-info channel (v1).
+
+function upliftCodeBlocks(tree: Root): void {
+  visit(tree, 'element', (node: Element, _idx, parent) => {
+    if (node.tagName !== 'pre') return
+    // Skip the inner <pre> we just created (its parent is the new <cb>) so the
+    // visitor doesn't double-wrap as it descends into rewritten children.
+    if (parent && (parent as Element).tagName === 'cb') return
+
+    const lang = codeLang(node)
+    const inner: Element = {
+      type: 'element',
+      tagName: 'pre',
+      properties: { ...(node.properties ?? {}) },
+      children: node.children,
+    }
+    node.tagName = 'cb'
+    node.properties = lang ? { l: lang } : {}
+    node.children = [inner]
+  })
+}
+
+/** Read `language-xxx` off a <pre>'s child <code>, if present. */
+function codeLang(pre: Element): string {
+  const code = pre.children.find(
+    (c): c is Element => c.type === 'element' && c.tagName === 'code',
+  )
+  const cls = code?.properties?.className
+  const list = Array.isArray(cls) ? cls.map(String) : typeof cls === 'string' ? [cls] : []
+  for (const c of list) {
+    const m = c.match(/^language-(.+)$/)
+    if (m) return m[1]
+  }
+  return ''
 }
 
 /** Collect every row's cell text from a <table> (across thead/tbody). */

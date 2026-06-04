@@ -3,20 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Talon Doc Runtime — Markdown 转换对照</title>
-    <meta name="description" content="左边是 TDR-flavored Markdown 源码，右边是 tdr format 转出来的、由 runtime 实时渲染的结构化文档。" />
+    <title>Talon Doc Runtime — Markdown / 纯文本 / HTML → 结构化文档</title>
+    <meta name="description" content="同一套转换管线，三种输入对照：左边是 Markdown / 纯文本 / HTML 源码，右边是 tdr convert 转出来、由 runtime 实时渲染的结构化文档。" />
 
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://darkmice.github.io/talon-doc-runtime/markdown.html" />
-    <meta property="og:title" content="Talon Doc Runtime — Markdown → 结构化文档（左右对照）" />
-    <meta property="og:description" content="同一份内容：左边写 Markdown（admonition / file:path 代码块 / task list / details），右边是 tdr format 自动 uplift 出的 TDR 组件。" />
+    <meta property="og:title" content="Talon Doc Runtime — Markdown / 纯文本 / HTML → 结构化文档（左右对照）" />
+    <meta property="og:description" content="三种输入、同一条管线：admonition / file:path 代码块 / task list / 两栏表格 / details 如何自动 uplift 成 TDR 组件。" />
     <meta property="og:image" content="https://darkmice.github.io/talon-doc-runtime/og.svg" />
     <meta name="twitter:card" content="summary_large_image" />
 
     <style>
-      :root {
-        --col-gap: 0px;
-      }
+      :root { --col-gap: 0px; }
       * { box-sizing: border-box; }
       body {
         margin: 0;
@@ -30,279 +28,199 @@
       }
 
       /* ── page header ── */
-      .page-head {
-        max-width: 1240px;
-        margin: 0 auto;
-        padding: 40px 24px 8px;
-      }
-      .page-head h1 {
-        font-size: 26px;
-        margin: 0 0 8px;
-        letter-spacing: -0.01em;
-      }
-      .page-head p {
-        margin: 0;
-        max-width: 64ch;
-        line-height: 1.6;
-        opacity: 0.75;
-        font-size: 15px;
-      }
-      .page-head .back {
-        display: inline-block;
-        margin-bottom: 18px;
-        font-size: 13px;
-        text-decoration: none;
-        color: inherit;
-        opacity: 0.55;
-      }
+      .page-head { max-width: 1240px; margin: 0 auto; padding: 40px 24px 8px; }
+      .page-head h1 { font-size: 26px; margin: 0 0 8px; letter-spacing: -0.01em; }
+      .page-head p { margin: 0; max-width: 66ch; line-height: 1.6; opacity: 0.75; font-size: 15px; }
+      .page-head .back { display: inline-block; margin-bottom: 18px; font-size: 13px; text-decoration: none; color: inherit; opacity: 0.55; }
       .page-head .back:hover { opacity: 0.9; }
+
+      /* ── source-type tabs (Markdown / 纯文本 / HTML) ── */
+      .srctabs {
+        max-width: 1240px; margin: 20px auto 0; padding: 0 24px;
+        display: flex; gap: 6px; flex-wrap: wrap;
+      }
+      .srctab {
+        appearance: none; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 8px 16px; border-radius: 9px 9px 0 0;
+        border: 1px solid transparent; border-bottom: 0;
+        background: transparent; color: inherit; opacity: 0.6;
+        transition: opacity 0.16s, background 0.16s, border-color 0.16s;
+      }
+      .srctab:hover { opacity: 0.9; }
+      .srctab.is-active {
+        opacity: 1;
+        background: #ffffff;
+        border-color: var(--rule, rgba(0,0,0,0.1));
+      }
+      .srctab .ext {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px; padding: 1px 7px; border-radius: 999px;
+        background: rgba(0,0,0,0.07); opacity: 0.85;
+      }
+      .srctab.is-active .ext { background: var(--accent-bg, rgba(59,130,246,0.14)); color: var(--accent, #2563eb); }
+      .srctab.t-md { --accent: #c2410c; --accent-bg: rgba(194,65,12,0.13); }
+      .srctab.t-txt { --accent: #0d9488; --accent-bg: rgba(13,148,136,0.14); }
+      .srctab.t-html { --accent: #7c3aed; --accent-bg: rgba(124,58,237,0.14); }
+      @media (prefers-color-scheme: dark) {
+        .srctab.is-active { background: #161616; --rule: rgba(255,255,255,0.14); }
+        .srctab .ext { background: rgba(255,255,255,0.1); }
+      }
 
       /* ── the split ── */
       .split {
-        max-width: 1240px;
-        margin: 24px auto 64px;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1px;
+        max-width: 1240px; margin: 0 auto 64px;
+        display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
         background: var(--rule, rgba(0,0,0,0.1));
         border: 1px solid var(--rule, rgba(0,0,0,0.1));
-        border-radius: 14px;
-        overflow: hidden;
+        border-radius: 0 14px 14px 14px; overflow: hidden;
       }
-      @media (prefers-color-scheme: dark) {
-        .split { --rule: rgba(255,255,255,0.12); }
-      }
-      @media (max-width: 860px) {
-        .split { grid-template-columns: 1fr; }
-      }
+      @media (prefers-color-scheme: dark) { .split { --rule: rgba(255,255,255,0.12); } }
+      @media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
 
-      .pane {
-        background: #ffffff;
-        min-width: 0;
-      }
-      @media (prefers-color-scheme: dark) {
-        .pane { background: #161616; }
-      }
+      .pane { background: #ffffff; min-width: 0; }
+      @media (prefers-color-scheme: dark) { .pane { background: #161616; } }
 
       .pane-head {
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        height: 48px;
-        padding: 0 18px;
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        background: #f5f5f5;
-        border-bottom: 1px solid var(--rule, rgba(0,0,0,0.08));
+        position: sticky; top: 0; z-index: 2;
+        display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 18px;
+        font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+        background: #f5f5f5; border-bottom: 1px solid var(--rule, rgba(0,0,0,0.08));
         backdrop-filter: blur(6px);
       }
-      @media (prefers-color-scheme: dark) {
-        .pane-head { background: #1d1d1d; --rule: rgba(255,255,255,0.1); }
-      }
-      .pane-head .dot {
-        width: 8px; height: 8px; border-radius: 50%;
-      }
+      @media (prefers-color-scheme: dark) { .pane-head { background: #1d1d1d; --rule: rgba(255,255,255,0.1); } }
+      .pane-head .dot { width: 8px; height: 8px; border-radius: 50%; }
       .pane-head .dot.src { background: #8b8b8b; }
       .pane-head .dot.out { background: #3b82f6; }
       .pane-head .badge {
-        margin-left: auto;
-        font-weight: 500;
-        text-transform: none;
-        letter-spacing: 0;
-        opacity: 0.55;
-        font-size: 11px;
+        margin-left: auto; font-weight: 500; text-transform: none; letter-spacing: 0;
+        opacity: 0.55; font-size: 11px;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
 
       /* ── left-pane view toggle (源码 / 普通渲染) ── */
       .toggle {
-        display: inline-flex;
-        gap: 2px;
-        padding: 2px;
-        border-radius: 7px;
-        background: rgba(0,0,0,0.06);
-        text-transform: none;
-        letter-spacing: 0;
+        display: inline-flex; gap: 2px; padding: 2px; border-radius: 7px;
+        background: rgba(0,0,0,0.06); text-transform: none; letter-spacing: 0;
       }
-      @media (prefers-color-scheme: dark) {
-        .toggle { background: rgba(255,255,255,0.08); }
-      }
+      @media (prefers-color-scheme: dark) { .toggle { background: rgba(255,255,255,0.08); } }
       .toggle .seg {
-        appearance: none;
-        border: 0;
-        cursor: pointer;
-        padding: 3px 10px;
-        border-radius: 5px;
-        font: inherit;
-        font-size: 11px;
-        font-weight: 600;
-        color: inherit;
-        opacity: 0.6;
-        background: transparent;
-        line-height: 1.5;
+        appearance: none; border: 0; cursor: pointer; padding: 3px 10px; border-radius: 5px;
+        font: inherit; font-size: 11px; font-weight: 600; color: inherit; opacity: 0.6;
+        background: transparent; line-height: 1.5;
       }
       .toggle .seg:hover { opacity: 0.85; }
-      .toggle .seg.is-active {
-        opacity: 1;
-        background: #ffffff;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-      }
-      @media (prefers-color-scheme: dark) {
-        .toggle .seg.is-active { background: #3a3a3a; box-shadow: none; }
-      }
+      .toggle .seg.is-active { opacity: 1; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+      @media (prefers-color-scheme: dark) { .toggle .seg.is-active { background: #3a3a3a; box-shadow: none; } }
+      .toggle .seg[hidden] { display: none; }
 
-      [data-view][hidden] { display: none !important; }
-
-      /* ── left: markdown source ── */
+      /* ── left: raw source ── */
       .source {
-        margin: 0;
-        padding: 22px 20px;
+        margin: 0; padding: 22px 20px;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-        font-size: 12.5px;
-        line-height: 1.7;
-        white-space: pre-wrap;
-        word-break: break-word;
-        tab-size: 2;
-        color: #2b2b2b;
+        font-size: 12.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+        tab-size: 2; color: #2b2b2b;
       }
-      @media (prefers-color-scheme: dark) {
-        .source { color: #cfcfcf; }
-      }
-      /* simple markdown syntax tint */
-      .source .h { color: #c2410c; font-weight: 600; }
-      .source .fm { color: #7c3aed; }
-      .source .fence { color: #0d9488; }
-      .source .tag { color: #2563eb; }
-      .source .adm { color: #b45309; font-weight: 600; }
-      .source .task { color: #16a34a; }
-      @media (prefers-color-scheme: dark) {
-        .source .h { color: #fb923c; }
-        .source .fm { color: #c4b5fd; }
-        .source .fence { color: #5eead4; }
-        .source .tag { color: #93c5fd; }
-        .source .adm { color: #fcd34d; }
-        .source .task { color: #86efac; }
-      }
+      @media (prefers-color-scheme: dark) { .source { color: #cfcfcf; } }
 
-      /* ── left: plain markdown render (no TDR) ── */
-      /* Deliberately plain, "GitHub README"-ish typography so the contrast
-         with the structured TDR pane on the right is obvious: admonitions are
-         just blockquotes, task lists are bare checkboxes, <d>/<because> are
-         unknown unstyled elements. */
-      .preview {
-        padding: 22px 22px 28px;
-        font-size: 14px;
-        line-height: 1.65;
-        color: #24292f;
-      }
-      @media (prefers-color-scheme: dark) {
-        .preview { color: #c9d1d9; }
-      }
-      .preview h1, .preview h2, .preview h3 {
-        line-height: 1.25;
-        margin: 1.4em 0 0.5em;
-        font-weight: 650;
-      }
+      /* ── left: plain render (no TDR) ── */
+      .preview { padding: 22px 22px 28px; font-size: 14px; line-height: 1.65; color: #24292f; }
+      @media (prefers-color-scheme: dark) { .preview { color: #c9d1d9; } }
+      .preview h1, .preview h2, .preview h3 { line-height: 1.25; margin: 1.4em 0 0.5em; font-weight: 650; }
       .preview h1 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid var(--rule, rgba(0,0,0,0.1)); }
       .preview h2 { font-size: 1.25em; padding-bottom: 0.3em; border-bottom: 1px solid var(--rule, rgba(0,0,0,0.1)); }
       .preview > :first-child { margin-top: 0; }
       .preview p { margin: 0 0 1em; }
       .preview a { color: #0969da; }
       @media (prefers-color-scheme: dark) { .preview a { color: #58a6ff; } }
-      .preview code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 0.88em;
-        padding: 0.15em 0.4em;
-        border-radius: 5px;
-        background: rgba(127,127,127,0.16);
-      }
-      .preview pre {
-        background: rgba(127,127,127,0.1);
-        padding: 12px 14px;
-        border-radius: 8px;
-        overflow: auto;
-        font-size: 12.5px;
-        line-height: 1.5;
-      }
+      .preview code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88em; padding: 0.15em 0.4em; border-radius: 5px; background: rgba(127,127,127,0.16); }
+      .preview pre { background: rgba(127,127,127,0.1); padding: 12px 14px; border-radius: 8px; overflow: auto; font-size: 12.5px; line-height: 1.5; }
       .preview pre code { background: none; padding: 0; }
-      .preview blockquote {
-        margin: 0 0 1em;
-        padding: 0.2em 1em;
-        color: inherit;
-        opacity: 0.85;
-        border-left: 3px solid var(--rule, rgba(0,0,0,0.2));
-      }
-      .preview ul { padding-left: 1.4em; margin: 0 0 1em; }
-      /* GFM task list checkboxes render as <input type=checkbox> */
+      .preview blockquote { margin: 0 0 1em; padding: 0.2em 1em; color: inherit; opacity: 0.85; border-left: 3px solid var(--rule, rgba(0,0,0,0.2)); }
+      .preview ul, .preview ol { padding-left: 1.4em; margin: 0 0 1em; }
       .preview ul.contains-task-list { list-style: none; padding-left: 0.2em; }
       .preview .task-list-item input { margin-right: 0.5em; }
       .preview table { border-collapse: collapse; margin: 0 0 1em; }
       .preview th, .preview td { border: 1px solid var(--rule, rgba(0,0,0,0.15)); padding: 5px 10px; }
-      /* Unknown TDR tags (<d>/<because>/<so>) have no styling here — they
-         show up as plain inline text, which is precisely the point. */
 
       /* ── right: rendered output ── */
-      .output {
-        padding: 8px 4px;
-      }
-      /* The rendered side is a real .tdr-doc; relax its measure so it fills
-         the column rather than centering on a narrow editorial measure. */
-      .output .tdr-doc {
-        max-width: none;
-        padding: 14px 20px 24px;
-      }
+      .output { padding: 8px 4px; }
+      .output .tdr-doc { max-width: none; padding: 14px 20px 24px; }
+      .output .loading { padding: 40px 22px; opacity: 0.5; font-size: 14px; }
+
+      [data-view][hidden] { display: none !important; }
     </style>
   </head>
   <body>
     <header class="page-head">
       <a class="back" href="./index.html">← 所有 demo</a>
-      <h1>Markdown → 结构化文档</h1>
+      <h1>Markdown / 纯文本 / HTML → 结构化文档</h1>
       <p>
-        同一份内容，三种形态对照。左栏可切换 <strong>源码</strong> 与 <strong>普通 Markdown 渲染</strong>（GitHub README 那样的裸渲染）；
-        右栏是 <code>tdr format</code> 转出来、由 runtime 实时渲染的 <strong>TDR 结构化文档</strong>。
-        对比「普通渲染」和「TDR」就能看出：admonition、带 <code>file:path:lines</code> 的代码块、task list、<code>&lt;details&gt;</code>
-        在裸渲染里只是 blockquote / 勾选框 / 折叠块，在 TDR 里被 uplift 成
-        <code>&lt;call&gt;</code> / <code>&lt;src&gt;</code> / <code>&lt;chk&gt;</code> / <code>&lt;c&gt;</code>；
-        原生 <code>&lt;d&gt;</code> 标签在裸渲染里直接是无样式文本，在 TDR 里成为决策卡。
+        同一条 <code>tdr convert</code> 管线，三种输入对照 —— 在上方切换 <strong>Markdown</strong> /
+        <strong>纯文本</strong> / <strong>HTML</strong>。左栏是源码（Markdown 还可切到「普通渲染」看 GitHub README 那样的裸渲染），
+        右栏是 <code>convert()</code> 转出来、由 runtime <strong>实时渲染</strong>的 TDR 文档。
+        看 admonition、<code>file:path:lines</code> 代码块、task list、两栏表格、<code>&lt;details&gt;</code>
+        如何被 uplift 成 <code>&lt;call&gt;</code> / <code>&lt;src&gt;</code> / <code>&lt;kv&gt;</code> /
+        <code>&lt;chk&gt;</code> / <code>&lt;c&gt;</code>；纯文本的列表 / 缩进代码 / 裸 URL、HTML 的正文抽取与
+        <code>&lt;blockquote&gt;</code> → <code>&lt;call&gt;</code> 也走同一套规则。
       </p>
     </header>
 
+    <!-- source-type tabs -->
+    <div class="srctabs" role="tablist" aria-label="输入类型">
+      <button class="srctab t-md is-active" data-type="md" role="tab" aria-selected="true">Markdown <span class="ext">.md</span></button>
+      <button class="srctab t-txt" data-type="txt" role="tab" aria-selected="false">纯文本 <span class="ext">.txt</span></button>
+      <button class="srctab t-html" data-type="html" role="tab" aria-selected="false">HTML <span class="ext">.html</span></button>
+    </div>
+
     <div class="split">
-      <!-- ───────────────────────── LEFT: source ───────────────────────── -->
+      <!-- LEFT: source -->
       <section class="pane" id="left">
         <div class="pane-head">
-          <span class="dot src"></span> Markdown
+          <span class="dot src"></span> <span data-src-label>Markdown</span>
           <span class="toggle" role="tablist" aria-label="左栏视图切换">
             <button class="seg is-active" data-view="source" role="tab" aria-selected="true">源码</button>
             <button class="seg" data-view="preview" role="tab" aria-selected="false">普通渲染</button>
           </span>
           <span class="badge" data-badge>markdown-source.md</span>
         </div>
-<pre class="source" data-view="source"><span class="fm">---
+        <pre class="source" data-view="source"></pre>
+        <div class="preview" data-view="preview" hidden></div>
+      </section>
+
+      <!-- RIGHT: rendered -->
+      <section class="pane">
+        <div class="pane-head">
+          <span class="dot out"></span> tdr convert → 渲染结果
+          <span class="badge" data-out-badge>tdr convert --ext md --fragment</span>
+        </div>
+        <div class="output">
+          <main class="tdr-doc"><div class="loading">加载 runtime…</div></main>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── inlined source fixtures (no fetch — works on file:// and Pages) ── -->
+    <script type="text/plain" data-fixture="md">---
 archetype: business-document
 title: 幂等键改 UUIDv7 — Markdown 写法
 lang: zh-CN
----</span>
+---
 
-<span class="h"># 支付重复扣款复盘</span>
+# 支付重复扣款复盘
 
-线上在 09:14 出现首笔重复扣款。下面这份文档用 **TDR-flavored Markdown** 写成，左边是你写的源码，右边是 `tdr format` 转出来的结果。散文、列表、表格照常用 Markdown；提示、代码引用、清单按约定写，会自动 uplift 成 TDR 组件。
+线上在 09:14 出现首笔重复扣款。下面这份文档用 **TDR-flavored Markdown** 写成，左边是你写的源码，右边是 `tdr convert` 转出来的结果。散文、列表、表格照常用 Markdown；提示、代码引用、清单按约定写，会自动 uplift 成 TDR 组件。
 
-<span class="h">## 根因</span>
+## 根因
 
 幂等键由服务端在收到请求后生成，无法跨重试保持一致。客户端重试时拿到的是**两个不同的 key**，于是被当成两笔独立支付。
 
-<span class="adm">&gt; [!WARNING]
-&gt; 这个缺陷在低并发下几乎不可见 — 只有重试窗口与首次写入重叠时才触发。</span>
+> [!WARNING]
+> 这个缺陷在低并发下几乎不可见 — 只有重试窗口与首次写入重叠时才触发。
 
-<span class="adm">&gt; 复盘当天我们把链路上每个服务的当前状态拉了一遍，确认止血没有遗漏。没有 `[!XXX]` 标记、也没有「注意：」前缀的普通引用，会被当成补充说明，自动 uplift 成 `&lt;call k="note"&gt;`。</span>
+> 复盘当天我们把链路上每个服务的当前状态拉了一遍，确认止血没有遗漏。没有 `[!XXX]` 标记、也没有「注意：」前缀的普通引用，会被当成补充说明，自动 uplift 成 `<call k="note">`。
 
-故障期间各服务的状态如下。两列、键名规整的小表格会被识别成键值对，转成 `&lt;kv&gt;`：
+故障期间各服务的状态如下。两列、键名规整的小表格会被识别成键值对，转成 `<kv>`：
 
 | 服务 | 状态 |
 | --- | --- |
@@ -313,201 +231,261 @@ lang: zh-CN
 
 代码引用直接写在 fence 的 info 里，带上 `file:path:lines`：
 
-<span class="fence">```ts file:src/payment/idempotency.ts:42-46</span>
+```ts file:src/payment/idempotency.ts:42-46
 function keyFor(req: Request) {
   return hash(req.body) + Date.now()   // ← Date.now() 让 key 每次都不同
 }
-<span class="fence">```</span>
+```
 
-<span class="h">## 决策</span>
+## 决策
 
 需要精确控制组件时，直接写原生 TDR 标签 —— 它们在 Markdown 里原样透传：
 
-<span class="tag">&lt;d s="approved" v="已采纳" t="幂等键改客户端生成的 UUIDv7"&gt;
-  &lt;because&gt;服务端生成无法跨重试保持一致。&lt;/because&gt;
-  &lt;so&gt;客户端生成 UUIDv7 并透传，重试天然去重。&lt;/so&gt;
-&lt;/d&gt;</span>
-
----
-<span class="h">## 收尾清单</span>
-
-紧贴在标题上方的 `---` 不会变成普通分隔线，而是带上后面这个标题文本，转成 `&lt;divider t="收尾清单"&gt;`。单独成段的 `---` 仍然是 `&lt;hr&gt;`。
-
-GFM task list 会变成 `&lt;chk&gt;`：
-
-<span class="task">- [x] 紧急止血：临时关闭重试
-- [x] 定位根因
-- [ ] 上线 UUIDv7 方案
-- [ ] 补回归测试</span>
-
-<span class="tag">&lt;details&gt;
-&lt;summary&gt;展开看完整的修复 diff&lt;/summary&gt;</span>
-
-`&lt;details&gt;` 会变成可折叠的 `&lt;c&gt;`。
-
-<span class="fence">```ts</span>
-function keyFor(req: Request) {
-  return req.headers['idempotency-key']   // 由客户端 UUIDv7 提供
-}
-<span class="fence">```</span>
-
-<span class="tag">&lt;/details&gt;</span>
-
-<span class="adm">&gt; 注意：中文「注意：」开头的引用也会被识别成提示框。</span></pre>
-        <div class="preview" data-view="preview" hidden>
-<!-- BEGIN PLAIN: vanilla remark render of markdown-source.md (no TDR uplift) -->
-<h1>支付重复扣款复盘</h1>
-<p>线上在 09:14 出现首笔重复扣款。下面这份文档用 <strong>TDR-flavored Markdown</strong> 写成，左边是你写的源码，右边是 <code>tdr format</code> 转出来的结果。散文、列表、表格照常用 Markdown；提示、代码引用、清单按约定写，会自动 uplift 成 TDR 组件。</p>
-<h2>根因</h2>
-<p>幂等键由服务端在收到请求后生成，无法跨重试保持一致。客户端重试时拿到的是<strong>两个不同的 key</strong>，于是被当成两笔独立支付。</p>
-<blockquote>
-<p>[!WARNING]
-这个缺陷在低并发下几乎不可见 — 只有重试窗口与首次写入重叠时才触发。</p>
-</blockquote>
-<blockquote>
-<p>复盘当天我们把链路上每个服务的当前状态拉了一遍，确认止血没有遗漏。没有 <code>[!XXX]</code> 标记、也没有「注意：」前缀的普通引用，会被当成补充说明，自动 uplift 成 <code>&#x3C;call k="note"></code>。</p>
-</blockquote>
-<p>故障期间各服务的状态如下。两列、键名规整的小表格会被识别成键值对，转成 <code>&#x3C;kv></code>：</p>
-<table>
-<thead>
-<tr>
-<th>服务</th>
-<th>状态</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>支付网关</td>
-<td>降级</td>
-</tr>
-<tr>
-<td>幂等校验</td>
-<td>异常</td>
-</tr>
-<tr>
-<td>对账服务</td>
-<td>正常</td>
-</tr>
-<tr>
-<td>退款队列</td>
-<td>积压</td>
-</tr>
-</tbody>
-</table>
-<p>代码引用直接写在 fence 的 info 里，带上 <code>file:path:lines</code>：</p>
-<pre><code class="language-ts">function keyFor(req: Request) {
-  return hash(req.body) + Date.now()   // ← Date.now() 让 key 每次都不同
-}
-</code></pre>
-<h2>决策</h2>
-<p>需要精确控制组件时，直接写原生 TDR 标签 —— 它们在 Markdown 里原样透传：</p>
-<hr>
-<h2>收尾清单</h2>
-<p>紧贴在标题上方的 <code>---</code> 不会变成普通分隔线，而是带上后面这个标题文本，转成 <code>&#x3C;divider t="收尾清单"></code>。单独成段的 <code>---</code> 仍然是 <code>&#x3C;hr></code>。</p>
-<p>GFM task list 会变成 <code>&#x3C;chk></code>：</p>
-<ul class="contains-task-list">
-<li class="task-list-item"><input type="checkbox" checked disabled> 紧急止血：临时关闭重试</li>
-<li class="task-list-item"><input type="checkbox" checked disabled> 定位根因</li>
-<li class="task-list-item"><input type="checkbox" disabled> 上线 UUIDv7 方案</li>
-<li class="task-list-item"><input type="checkbox" disabled> 补回归测试</li>
-</ul>
-<details>
-<summary>展开看完整的修复 diff</summary>
-<p><code>&#x3C;details></code> 会变成可折叠的 <code>&#x3C;c></code>。</p>
-<pre><code class="language-ts">function keyFor(req: Request) {
-  return req.headers['idempotency-key']   // 由客户端 UUIDv7 提供
-}
-</code></pre>
-</details>
-<blockquote>
-<p>注意：中文「注意：」开头的引用也会被识别成提示框。</p>
-</blockquote>
-<!-- END PLAIN -->
-        </div>
-      </section>
-
-      <!-- ───────────────────────── RIGHT: rendered ─────────────────────── -->
-      <section class="pane">
-        <div class="pane-head">
-          <span class="dot out"></span> tdr format → 渲染结果
-          <span class="badge">tdr format --fragment</span>
-        </div>
-        <div class="output">
-          <main class="tdr-doc">
-<!-- BEGIN GENERATED: `node scripts/tdr.mjs format examples/markdown-source.md --fragment` -->
-<h1>支付重复扣款复盘</h1>
-<p>线上在 09:14 出现首笔重复扣款。下面这份文档用 <strong>TDR-flavored Markdown</strong> 写成，左边是你写的源码，右边是 <code>tdr format</code> 转出来的结果。散文、列表、表格照常用 Markdown；提示、代码引用、清单按约定写，会自动 uplift 成 TDR 组件。</p>
-<h2>根因</h2>
-<p>幂等键由服务端在收到请求后生成，无法跨重试保持一致。客户端重试时拿到的是<strong>两个不同的 key</strong>，于是被当成两笔独立支付。</p>
-<call k="warn"><p>这个缺陷在低并发下几乎不可见 — 只有重试窗口与首次写入重叠时才触发。</p></call>
-<call k="note"><p>复盘当天我们把链路上每个服务的当前状态拉了一遍，确认止血没有遗漏。没有 <code>[!XXX]</code> 标记、也没有「注意：」前缀的普通引用，会被当成补充说明，自动 uplift 成 <code>&lt;call k="note"&gt;</code>。</p></call>
-<p>故障期间各服务的状态如下。两列、键名规整的小表格会被识别成键值对，转成 <code>&#x3C;kv></code>：</p>
-<kv>
-<row k="支付网关" v="降级"></row>
-<row k="幂等校验" v="异常"></row>
-<row k="对账服务" v="正常"></row>
-<row k="退款队列" v="积压"></row>
-</kv>
-<p>代码引用直接写在 fence 的 info 里，带上 <code>file:path:lines</code>：</p>
-<src id="src-payment-idempotency-ts-42-46" p="src/payment/idempotency.ts:42-46" l="ts"><pre><code class="language-ts">function keyFor(req: Request) {
-  return hash(req.body) + Date.now()   // ← Date.now() 让 key 每次都不同
-}</code></pre></src>
-<h2>决策</h2>
-<p>需要精确控制组件时，直接写原生 TDR 标签 —— 它们在 Markdown 里原样透传：</p>
 <d s="approved" v="已采纳" t="幂等键改客户端生成的 UUIDv7">
   <because>服务端生成无法跨重试保持一致。</because>
   <so>客户端生成 UUIDv7 并透传，重试天然去重。</so>
 </d>
-<divider t="收尾清单"></divider>
-<p>紧贴在标题上方的 <code>---</code> 不会变成普通分隔线，而是带上后面这个标题文本，转成 <code>&#x3C;divider t="收尾清单"></code>。单独成段的 <code>---</code> 仍然是 <code>&#x3C;hr></code>。</p>
-<p>GFM task list 会变成 <code>&#x3C;chk></code>：</p>
-<chk>
-<ck k="true">紧急止血：临时关闭重试</ck>
-<ck k="true">定位根因</ck>
-<ck>上线 UUIDv7 方案</ck>
-<ck>补回归测试</ck>
-</chk>
-<c t="展开看完整的修复 diff">
-<p><code>&#x3C;details></code> 会变成可折叠的 <code>&#x3C;c></code>。</p>
-<cb l="ts"><pre><code class="language-ts">function keyFor(req: Request) {
+
+---
+## 收尾清单
+
+紧贴在标题上方的 `---` 不会变成普通分隔线，而是带上后面这个标题文本，转成 `<divider t="收尾清单">`。单独成段的 `---` 仍然是 `<hr>`。
+
+GFM task list 会变成 `<chk>`：
+
+- [x] 紧急止血：临时关闭重试
+- [x] 定位根因
+- [ ] 上线 UUIDv7 方案
+- [ ] 补回归测试
+
+<details>
+<summary>展开看完整的修复 diff</summary>
+
+`<details>` 会变成可折叠的 `<c>`。
+
+```ts
+function keyFor(req: Request) {
   return req.headers['idempotency-key']   // 由客户端 UUIDv7 提供
-}</code></pre></cb>
-</c>
-<call k="note"><p>中文「注意：」开头的引用也会被识别成提示框。</p></call>
-<!-- END GENERATED -->
-          </main>
-        </div>
-      </section>
-    </div>
+}
+```
 
+</details>
+
+> 注意：中文「注意：」开头的引用也会被识别成提示框。
+</script>
+
+    <script type="text/plain" data-fixture="txt">订单服务超时排查记录
+
+最近一周线上的 order-service 偶发 504，集中在每天晚高峰的二十分钟左右。
+我们先怀疑是数据库连接池被打满，但实际抓下来的指标并不支持这个判断，
+连接数一直在水位线以下，慢查询也没有明显上涨。
+
+经过一轮排查，目前定位到的几个可疑点如下：
+
+- 下游 inventory-service 的响应在高峰期会从 30ms 抖到 800ms
+* 网关侧的 keep-alive 复用率偏低，每次都在重新建连
+• 重试逻辑没有退避，失败后立刻重打，进一步放大了压力
+
+复现和验证的步骤大致是这样：
+
+1. 用压测脚本把 QPS 拉到平峰的三倍
+2. 同时把 inventory-service 的人工延迟注入到 500ms
+3. 观察 order-service 的 P99 是否越过 3 秒的告警线
+4. 关掉立即重试，换成带抖动的指数退避后再跑一遍
+
+临时的兜底配置可以这样写，先把超时和重试收敛掉，避免雪崩：
+
+    timeout: 1200ms
+    retry:
+      max: 2
+      backoff: exponential
+      jitter: true
+
+完整的压测报告和火焰图都放在内部看板上，链接见 https://wiki.internal.example.com/incident/order-504 ，后续的根因分析会在周四的复盘会上同步给大家。
+</script>
+
+    <script type="text/plain" data-fixture="html">&lt;!doctype html&gt;
+&lt;html lang="zh-CN"&gt;
+  &lt;head&gt;
+    &lt;meta charset="utf-8" /&gt;
+    &lt;title&gt;边缘网关灰度发布手册&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;header class="site-chrome"&gt;
+      &lt;a class="brand" href="/"&gt;Talon 平台工程&lt;/a&gt;
+      &lt;nav aria-label="主导航"&gt;
+        &lt;ul&gt;
+          &lt;li&gt;&lt;a href="/docs"&gt;文档&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href="/runbooks"&gt;运行手册&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href="/status"&gt;服务状态&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/nav&gt;
+    &lt;/header&gt;
+
+    &lt;article class="runbook"&gt;
+      &lt;h1&gt;边缘网关灰度发布手册&lt;/h1&gt;
+
+      &lt;p&gt;本手册描述边缘网关（edge-gateway）在生产环境的灰度发布流程，面向 SRE 与值班工程师。目标是把单次发布的爆炸半径控制在单可用区之内，并保证可在 90 秒内完成回滚。&lt;/p&gt;
+
+      &lt;p&gt;灰度按可用区分批推进：先 &lt;code&gt;cn-east-1a&lt;/code&gt;，观察 10 分钟无异常后再推进 &lt;code&gt;cn-east-1b&lt;/code&gt;，最后覆盖全量节点。&lt;/p&gt;
+
+      &lt;blockquote&gt;
+        &lt;p&gt;[!WARNING] 切勿在未关闭自动扩容（HPA）的情况下灰度发布，否则新旧版本会同时被扩容，导致连接数翻倍并触发上游限流。&lt;/p&gt;
+      &lt;/blockquote&gt;
+
+      &lt;blockquote&gt;
+        &lt;p&gt;发布窗口默认为工作日 10:00–12:00。如需在窗口外发布，必须在值班群同步并取得当班负责人确认。&lt;/p&gt;
+      &lt;/blockquote&gt;
+
+      &lt;h2&gt;发布参数&lt;/h2&gt;
+
+      &lt;table&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;&lt;th&gt;参数&lt;/th&gt;&lt;th&gt;取值&lt;/th&gt;&lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+          &lt;tr&gt;&lt;td&gt;批次间隔&lt;/td&gt;&lt;td&gt;10 分钟&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;单批比例&lt;/td&gt;&lt;td&gt;25%&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;回滚阈值&lt;/td&gt;&lt;td&gt;错误率 1%&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;观察指标&lt;/td&gt;&lt;td&gt;P99 延迟&lt;/td&gt;&lt;/tr&gt;
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+
+      &lt;h2&gt;触发发布&lt;/h2&gt;
+
+      &lt;p&gt;在堡垒机上执行下列命令开始第一批灰度：&lt;/p&gt;
+
+      &lt;pre&gt;&lt;code&gt;tdr deploy edge-gateway \
+  --canary --zone cn-east-1a \
+  --step 25 --interval 10m&lt;/code&gt;&lt;/pre&gt;
+
+      &lt;details&gt;
+        &lt;summary&gt;回滚步骤（仅在指标恶化时展开）&lt;/summary&gt;
+        &lt;p&gt;若任一批次错误率超过 1% 或 P99 延迟较基线上涨超过 30%，立即执行回滚：&lt;/p&gt;
+        &lt;ol&gt;
+          &lt;li&gt;运行 &lt;code&gt;tdr rollback edge-gateway --to last-stable&lt;/code&gt;。&lt;/li&gt;
+          &lt;li&gt;确认所有可用区流量回到旧版本，错误率回落基线。&lt;/li&gt;
+        &lt;/ol&gt;
+      &lt;/details&gt;
+    &lt;/article&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</script>
+
+    <!-- runtime (injects tokens + enhances the rendered output) -->
     <script src="https://unpkg.com/@talon-ui/doc-runtime/dist/talon-doc-runtime.iife.js"></script>
-    <script>
-      // Left-pane view toggle: 源码 ⇄ 普通 Markdown 渲染.
-      (() => {
-        const left = document.getElementById('left')
-        const segs = left.querySelectorAll('.toggle .seg')
-        const views = left.querySelectorAll('[data-view]')
-        const badge = left.querySelector('[data-badge]')
-        const BADGE = { source: 'markdown-source.md', preview: '普通 Markdown 渲染' }
+    <script type="module">
+      // convert  : .md/.txt/.html → TDR HTML (full L1+L2 uplift)
+      // mdToPlainHtml : vanilla markdown render (no uplift), for the 普通渲染 toggle
+      // Local dev / Pages: same-origin ./markdown.browser.js; else unpkg fallback.
+      let convert, mdToPlainHtml
+      const SOURCES = [
+        './markdown.browser.js',
+        'https://unpkg.com/@talon-ui/doc-runtime/dist/markdown.browser.js',
+      ]
+      for (const src of SOURCES) {
+        try { ({ convert, mdToPlainHtml } = await import(src)); break } catch (_) { /* next */ }
+      }
 
-        function show(view) {
-          segs.forEach((s) => {
-            const on = s.dataset.view === view
-            s.classList.toggle('is-active', on)
-            s.setAttribute('aria-selected', String(on))
-          })
-          views.forEach((v) => {
-            // The toggle controls only the two left-pane views; the <pre>/<div>
-            // both carry data-view, the .toggle buttons do too — skip buttons.
-            if (v.classList.contains('seg')) return
-            v.hidden = v.dataset.view !== view
-          })
-          if (badge) badge.textContent = BADGE[view] ?? ''
+      const TYPES = {
+        md:   { ext: 'md',   label: 'Markdown', badge: 'markdown-source.md', outBadge: 'tdr convert --ext md --fragment',   plain: true  },
+        txt:  { ext: 'txt',  label: '纯文本',    badge: 'txt-source.txt',      outBadge: 'tdr convert --ext txt --fragment',  plain: false },
+        html: { ext: 'html', label: 'HTML',     badge: 'html-source.html',    outBadge: 'tdr convert --ext html --fragment', plain: false },
+      }
+
+      // Pull the inlined fixtures. The .md/.txt blocks are stored verbatim; the
+      // .html block is stored entity-escaped (so it doesn't get parsed as real
+      // markup), so we decode it back to raw HTML before converting.
+      const fixtures = {}
+      document.querySelectorAll('[data-fixture]').forEach((el) => {
+        const t = el.dataset.fixture
+        let raw = el.textContent.replace(/^\n/, '')
+        if (t === 'html') {
+          const ta = document.createElement('textarea'); ta.innerHTML = raw; raw = ta.value
         }
+        fixtures[t] = raw
+      })
 
-        segs.forEach((s) => s.addEventListener('click', () => show(s.dataset.view)))
-        show('source')
-      })()
+      const left = document.getElementById('left')
+      const srcEl = left.querySelector('.source')
+      const previewEl = left.querySelector('.preview')
+      const badgeEl = left.querySelector('[data-badge]')
+      const srcLabel = left.querySelector('[data-src-label]')
+      const outBadge = document.querySelector('[data-out-badge]')
+      const outMain = document.querySelector('.output .tdr-doc')
+      const viewSegs = left.querySelectorAll('.toggle .seg')
+      const previewSeg = left.querySelector('.toggle .seg[data-view="preview"]')
+      const rt = window.TalonDocRuntime
+
+      let current = 'md'
+      let view = 'source'
+
+      async function renderRight(type) {
+        const { ext } = TYPES[type]
+        outMain.innerHTML = '<div class="loading">转换中…</div>'
+        if (!convert) { outMain.innerHTML = '<div class="loading">无法加载转换器</div>'; return }
+        const { html } = await convert(fixtures[type], { ext, document: false })
+        outMain.innerHTML = html
+        // Re-enhance the freshly injected DSL with the runtime.
+        if (rt?.mount) rt.mount(outMain, { injectStyles: false })
+      }
+
+      async function renderPreview(type) {
+        if (type === 'md' && mdToPlainHtml) {
+          previewEl.innerHTML = await mdToPlainHtml(fixtures.md)
+        } else if (type === 'txt') {
+          // Plain text has no markup — show it as a <pre> block.
+          previewEl.innerHTML = '<pre style="white-space:pre-wrap;font-family:inherit;margin:0;">'
+            + fixtures.txt.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])) + '</pre>'
+        } else if (type === 'html') {
+          // The "plain" view of an HTML input is the browser's native render.
+          previewEl.innerHTML = fixtures.html
+        }
+      }
+
+      function showView(v) {
+        view = v
+        viewSegs.forEach((s) => {
+          const on = s.dataset.view === v
+          s.classList.toggle('is-active', on)
+          s.setAttribute('aria-selected', String(on))
+        })
+        srcEl.hidden = v !== 'source'
+        previewEl.hidden = v !== 'preview'
+      }
+
+      async function selectType(type) {
+        current = type
+        const cfg = TYPES[type]
+        document.querySelectorAll('.srctab').forEach((b) => {
+          const on = b.dataset.type === type
+          b.classList.toggle('is-active', on)
+          b.setAttribute('aria-selected', String(on))
+        })
+        srcLabel.textContent = cfg.label
+        outBadge.textContent = cfg.outBadge
+        // raw source (txt/md verbatim; html shown as escaped source text)
+        srcEl.textContent = fixtures[type]
+        // the 普通渲染 toggle label adapts; it's always available but means
+        // different things per type (vanilla md / raw text / native html)
+        previewSeg.textContent = type === 'md' ? '普通渲染' : (type === 'html' ? '浏览器原生' : '纯文本')
+        badgeEl.textContent = view === 'source' ? cfg.badge : previewSeg.textContent
+        await Promise.all([renderRight(type), renderPreview(type)])
+        // keep current view; refresh badge
+        badgeEl.textContent = view === 'source' ? cfg.badge : previewSeg.textContent
+      }
+
+      document.querySelectorAll('.srctab').forEach((b) =>
+        b.addEventListener('click', () => selectType(b.dataset.type)))
+      viewSegs.forEach((s) =>
+        s.addEventListener('click', () => {
+          showView(s.dataset.view)
+          const cfg = TYPES[current]
+          badgeEl.textContent = view === 'source' ? cfg.badge : previewSeg.textContent
+        }))
+
+      showView('source')
+      await selectType('md')
     </script>
   </body>
 </html>

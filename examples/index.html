@@ -215,9 +215,21 @@
       }
       .card .file .arrow { transition: transform 0.18s ease; }
       .card:hover .file .arrow { transform: translateX(4px); }
-      .card.wide { grid-column: 1 / -1; }
-      .card.wide .row { display: flex; gap: 2rem; align-items: flex-start; }
-      .card.wide .row > div:first-child { flex: 1; }
+
+      /* The conversion card is a <div> (it carries its own links — <a> can't
+         nest). Its title and footer links are styled inline. */
+      .card .card-title-link { color: inherit; text-decoration: none; }
+      .card .card-title-link:hover { color: var(--accent-strong, var(--tdr-accent-strong)); }
+      a.card .file { margin-top: auto; }
+      .srcfiles {
+        margin-top: 1rem; padding-top: 0.9rem;
+        border-top: 1px solid var(--tdr-border-soft, oklch(0.95 0.005 85));
+        display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 0.9rem;
+        font-family: var(--tdr-font-mono, ui-monospace, monospace); font-size: 0.74rem;
+      }
+      .srcfiles-label { letter-spacing: 0.1em; text-transform: uppercase; color: var(--tdr-muted, oklch(0.62 0.010 60)); }
+      .srcfiles a { color: var(--tdr-accent-strong, oklch(0.46 0.13 235)); text-decoration: none; padding: 0.1rem 0; border-bottom: 1px solid transparent; transition: border-color 0.16s; }
+      .srcfiles a:hover { border-bottom-color: currentColor; }
 
       /* per-card accent hues, drawn from the semantic palette */
       .card.a-business { --accent: oklch(0.62 0.13 235); --accent-strong: oklch(0.46 0.13 235); }
@@ -288,8 +300,6 @@
         .about { grid-template-columns: 1fr; gap: 1.6rem; }
         .section-head { flex-wrap: wrap; }
         .section-head .sub { margin-left: 0; flex-basis: 100%; }
-        .card.wide .row { flex-direction: column; gap: 1.1rem; }
-        .card.wide .row > div:first-child { width: 100%; }
         .topbar nav { display: none; }
         /* Monospace specimens must scroll inside their box, not widen the page */
         .codeblock pre, .specimen .src pre { font-size: 0.72rem; }
@@ -392,24 +402,21 @@
             <span class="file">playground.html <span class="arrow">→</span></span>
           </a>
 
-          <a class="card a-md wide reveal d3" href="./markdown.html">
-            <div class="row">
-              <div>
-                <div class="kicker"><span class="chip">conversion</span> 左右对照</div>
-                <h3>Markdown / 纯文本 / HTML → 结构化文档</h3>
-                <p>左边写 TDR-flavored Markdown，右边是 <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">tdr convert</code> 转出来、由 runtime 实时渲染的结果。看 admonition、<code style="font-family:var(--tdr-font-mono);font-size:0.85em;">file:path:lines</code> 代码块、task list、两栏表格、<code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;details&gt;</code> 如何自动 uplift 成 <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;call&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;src&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;kv&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;chk&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;c&gt;</code>。</p>
-                <span class="file">markdown.html <span class="arrow">→</span></span>
-              </div>
-              <div style="flex:0 0 auto;min-width:0;">
-                <div class="kicker" style="margin-bottom:0.6rem;">转换源文件</div>
-                <div class="meta-list" style="margin-top:0;border-top:0;">
-                  <div class="m"><span class="k">markdown</span><span class="v"><a href="./markdown-source.md">markdown-source.md</a></span></div>
-                  <div class="m"><span class="k">plain text</span><span class="v"><a href="./txt-source.txt">txt-source.txt</a></span></div>
-                  <div class="m"><span class="k">html</span><span class="v"><a href="./html-source.html">html-source.html</a></span></div>
-                </div>
-              </div>
+          <!-- Not an <a> wrapper: this card holds its own source-file links, and
+               <a> can't nest inside <a>. The title is the primary link; the
+               three fixtures are independent chip links in the footer. -->
+          <div class="card a-md reveal d3">
+            <div class="kicker"><span class="chip">conversion</span> 左右对照</div>
+            <h3><a href="./markdown.html" class="card-title-link">Markdown / 纯文本 / HTML → 结构化文档</a></h3>
+            <p>左边写 TDR-flavored Markdown，右边是 <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">tdr convert</code> 转出来、由 runtime 实时渲染的结果。看 admonition、<code style="font-family:var(--tdr-font-mono);font-size:0.85em;">file:path:lines</code> 代码块、task list、两栏表格、<code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;details&gt;</code> 如何自动 uplift 成 <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;call&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;src&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;kv&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;chk&gt;</code> / <code style="font-family:var(--tdr-font-mono);font-size:0.85em;">&lt;c&gt;</code>。</p>
+            <a class="file" href="./markdown.html">markdown.html <span class="arrow">→</span></a>
+            <div class="srcfiles">
+              <span class="srcfiles-label">转换源文件</span>
+              <a href="./markdown-source.md">markdown-source.md</a>
+              <a href="./txt-source.txt">txt-source.txt</a>
+              <a href="./html-source.html">html-source.html</a>
             </div>
-          </a>
+          </div>
 
           <a class="card a-demo reveal d3" href="./demo.html">
             <div class="kicker"><span class="chip">starter</span> 最小入门</div>

@@ -49,8 +49,10 @@
       body {
         display: flex; flex-direction: column;
         color: var(--ink);
+        /* The glow is derived from the live --surface token, so it stays subtle
+           in light mode AND doesn't turn into a heavy dark blob in dark mode. */
         background:
-          radial-gradient(120% 70% at 50% -10%, oklch(0.99 0.012 95 / 0.7), transparent 60%),
+          radial-gradient(120% 70% at 50% -10%, color-mix(in oklch, var(--surface) 60%, transparent), transparent 60%),
           var(--paper);
         font-family: var(--body); font-size: 15px; line-height: 1.55;
         -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
@@ -63,8 +65,10 @@
       .topbar {
         flex: 0 0 auto;
         display: flex; align-items: center; gap: 1.25rem;
-        padding: 0.7rem clamp(0.9rem, 2.5vw, 1.6rem);
-        border-bottom: 1.5px solid var(--ink);
+        padding: 0.6rem clamp(0.9rem, 2.5vw, 1.6rem);
+        /* A soft hairline — in dark mode --ink is near-white and made a harsh
+           bright bar; --line tracks the theme and stays a quiet divider. */
+        border-bottom: 1px solid var(--line);
         background: color-mix(in oklch, var(--paper) 86%, transparent);
         backdrop-filter: blur(8px);
         position: relative; z-index: 5;
@@ -74,19 +78,19 @@
       .brand .name { font-family: var(--display); font-weight: 600; font-size: 1.12rem; letter-spacing: -0.01em; }
       .brand .name .sub { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: block; margin-top: -2px; }
 
-      .controls { display: flex; align-items: center; gap: 1rem; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+      .controls { display: flex; align-items: center; gap: 0.8rem; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
 
       /* device preset segmented control */
-      .devices { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: var(--surface-muted); border: 1px solid var(--line); }
+      .devices { display: inline-flex; gap: 2px; padding: 2px; border-radius: 8px; background: var(--surface-muted); border: 1px solid var(--line); }
       .devices button {
         appearance: none; cursor: pointer; font: inherit; font-family: var(--mono);
-        font-size: 0.74rem; display: inline-flex; align-items: center; gap: 0.4rem;
-        padding: 0.32rem 0.7rem; border: 0; border-radius: 6px; color: var(--ink-soft);
+        font-size: 0.7rem; display: inline-flex; align-items: center; gap: 0.32rem;
+        padding: 0.26rem 0.56rem; border: 0; border-radius: 6px; color: var(--ink-soft);
         background: transparent; transition: background 0.15s, color 0.15s, box-shadow 0.15s;
       }
       .devices button:hover { color: var(--ink); }
       .devices button.is-active { background: var(--surface); color: var(--accent-strong); box-shadow: 0 1px 2px oklch(0.27 0.012 60 / 0.12); }
-      .devices button .px { opacity: 0.6; font-size: 0.66rem; }
+      .devices button .px { opacity: 0.55; font-size: 0.62rem; }
 
       /* width slider + readout */
       .width-ctl { display: inline-flex; align-items: center; gap: 0.6rem; }
@@ -105,8 +109,8 @@
       }
       .width-readout .unit { color: var(--muted); }
 
-      .theme-ctl { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: var(--surface-muted); border: 1px solid var(--line); }
-      .theme-ctl button { appearance: none; cursor: pointer; font: inherit; font-family: var(--mono); font-size: 0.72rem; padding: 0.3rem 0.6rem; border: 0; border-radius: 6px; background: transparent; color: var(--ink-soft); }
+      .theme-ctl { display: inline-flex; gap: 2px; padding: 2px; border-radius: 8px; background: var(--surface-muted); border: 1px solid var(--line); }
+      .theme-ctl button { appearance: none; cursor: pointer; font: inherit; font-family: var(--mono); font-size: 0.7rem; padding: 0.26rem 0.52rem; border: 0; border-radius: 6px; background: transparent; color: var(--ink-soft); }
       .theme-ctl button:hover { color: var(--ink); }
       .theme-ctl button.is-active { background: var(--surface); color: var(--accent-strong); box-shadow: 0 1px 2px oklch(0.27 0.012 60 / 0.12); }
 
@@ -155,8 +159,10 @@
         flex: 1 1 auto; min-width: 0; position: relative;
         display: flex; flex-direction: column; align-items: center;
         overflow: auto; padding: clamp(1rem, 3vw, 2.4rem) 1rem 2.4rem;
+        /* Stripe tint derives from --ink so it reads as a faint texture in both
+           themes instead of a hardcoded dark wash that dominates dark mode. */
         background:
-          repeating-linear-gradient(45deg, oklch(0.27 0.012 60 / 0.012) 0 8px, transparent 8px 16px),
+          repeating-linear-gradient(45deg, color-mix(in oklch, var(--ink) 4%, transparent) 0 8px, transparent 8px 16px),
           var(--surface-muted);
       }
       .stage-meta {
@@ -245,7 +251,7 @@
       .meta-list .m .k { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
       .meta-list .m .v a { color: var(--accent-strong); text-decoration: none; }
 
-      /* ── Mobile: rail collapses to a horizontal scroller ─────────── */
+      /* ── Tablet-ish: rail collapses to a horizontal scroller ─────── */
       @media (max-width: 800px) {
         body { overflow: auto; }
         .controls { gap: 0.6rem; }
@@ -265,6 +271,34 @@
         .devices button .label { display: none; }
         .brand .name .sub { display: none; }
       }
+
+      /* ── Real mobile device: the device-preview shell is meaningless
+         (you can't simulate widths — you ARE the device). Strip the bezel
+         and all width controls; let the example fill the screen edge-to-edge.
+         Toggled by JS adding .real-mobile to <html> on a genuinely small,
+         touch-primary viewport. ───────────────────────────────────────── */
+      html.real-mobile, html.real-mobile body { height: 100%; overflow: hidden; }
+      html.real-mobile .devices,
+      html.real-mobile .width-ctl,
+      html.real-mobile .about-toggle,
+      html.real-mobile .handle,
+      html.real-mobile .stage-meta { display: none !important; }
+      html.real-mobile .topbar { padding: 0.5rem 0.9rem; gap: 0.75rem; }
+      html.real-mobile .brand .name { font-size: 1rem; }
+      html.real-mobile .shell { flex: 1 1 auto; min-height: 0; }
+      html.real-mobile .stage {
+        padding: 0; background: var(--paper); overflow: hidden;
+        align-items: stretch;
+      }
+      html.real-mobile .frame-wrap,
+      html.real-mobile .frame-wrap.is-fit { width: 100% !important; max-width: 100%; flex: 1 1 auto; min-height: 0; }
+      html.real-mobile .bezel,
+      html.real-mobile .frame-wrap .bezel {
+        height: 100% !important; min-height: 0;
+        border: 0; border-radius: 0; box-shadow: none;
+      }
+      html.real-mobile .bezel-bar { display: none; }
+      html.real-mobile iframe.preview { height: 100%; }
     </style>
   </head>
   <body>
@@ -389,6 +423,21 @@ npm install @talon-ui/doc-runtime
         var handle = document.getElementById('handle');
         var current = EXAMPLES[0];
         var currentTheme = 'auto';
+
+        // ── Real-mobile detection ──────────────────────────────────────
+        // On a genuine phone the device-preview shell is pointless — you can't
+        // preview "other widths" when you ARE that width. Detect a small,
+        // touch-primary viewport and strip the shell so the example fills the
+        // screen edge-to-edge. (A narrow desktop window is NOT real mobile —
+        // it keeps the shell so you can still drag to wider widths.)
+        var docEl = document.documentElement;
+        function evalRealMobile() {
+          var coarse = window.matchMedia('(pointer: coarse)').matches;
+          var narrow = window.matchMedia('(max-width: 640px)').matches;
+          docEl.classList.toggle('real-mobile', coarse && narrow);
+        }
+        evalRealMobile();
+        try { window.matchMedia('(max-width: 640px)').addEventListener('change', evalRealMobile); } catch (_) {}
 
         // Apply a theme to the SHELL and broadcast it into the preview iframe.
         // Each iframe runs its own runtime instance, so the shell's setTheme()

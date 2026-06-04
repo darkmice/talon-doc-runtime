@@ -341,6 +341,8 @@ const { html, frontmatter, warnings } = await convert(content, {
 
 `ConvertOptions` 在 `TransformOptions` 基础上扩展了 `{ ext?, filename? }`。只处理 Markdown 时仍可直接 `import { mdToTdr }`（`convert` 在 `.md` 分支就是调它）。两者都从浏览器 bundle `dist/markdown.browser.js` 导出。
 
+同一个 bundle 还导出 `mdToPlainHtml(markdown)`：把**同一份** Markdown 用通用渲染器渲成普通 HTML（**不做** TDR uplift，原生 TDR 标签会被丢弃）。用于"源码 ⇄ 普通渲染"这种对比场景 —— 让读者并排看到「一份 Markdown 经 TDR 提升后」与「同一份用普通 Markdown 查看器渲染」的差别。playground 的渲染切换就是基于它。
+
 `enrich` 是异步钩子。它接收**已经过 L1+L2 转换**的 HTML 片段和 frontmatter / 原文上下文，返回升级后的 HTML。典型实现：调用 Claude，给一段 system prompt 说明"把这些段落识别为 `<d>` / `<myth>` / `<contrast>`"，让它产出更结构化的输出。
 
 CLI 暂时**不直接暴露 `--enrich`**（避免硬绑定 LLM 提供商）。需要 enrichment 的人在自己的工作流里 `import { convert }` / `import { mdToTdr }` 自行实现。

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>边缘网关灰度发布手册</title>
+  </head>
+  <body>
+    <header class="site-chrome">
+      <a class="brand" href="/">Talon 平台工程</a>
+      <nav aria-label="主导航">
+        <ul>
+          <li><a href="/docs">文档</a></li>
+          <li><a href="/runbooks">运行手册</a></li>
+          <li><a href="/status">服务状态</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <article class="runbook">
+      <h1>边缘网关灰度发布手册</h1>
+
+      <p>本手册描述边缘网关（edge-gateway）在生产环境的灰度发布流程，面向 SRE 与值班工程师。目标是把单次发布的爆炸半径控制在单可用区之内，并保证可在 90 秒内完成回滚。</p>
+
+      <p>灰度按可用区分批推进：先 <code>cn-east-1a</code>，观察 10 分钟无异常后再推进 <code>cn-east-1b</code>，最后覆盖全量节点。每一批都需确认错误率与 P99 延迟回落到基线。</p>
+
+      <blockquote>
+        <p>[!WARNING] 切勿在未关闭自动扩容（HPA）的情况下灰度发布，否则新旧版本会同时被扩容，导致连接数翻倍并触发上游限流。</p>
+      </blockquote>
+
+      <blockquote>
+        <p>发布窗口默认为工作日 10:00–12:00。如需在窗口外发布，必须在值班群同步并取得当班负责人确认。</p>
+      </blockquote>
+
+      <h2>发布参数</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>参数</th>
+            <th>取值</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>批次间隔</td>
+            <td>10 分钟</td>
+          </tr>
+          <tr>
+            <td>单批比例</td>
+            <td>25%</td>
+          </tr>
+          <tr>
+            <td>回滚阈值</td>
+            <td>错误率 1%</td>
+          </tr>
+          <tr>
+            <td>观察指标</td>
+            <td>P99 延迟</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>触发发布</h2>
+
+      <p>在堡垒机上执行下列命令开始第一批灰度，<code>--zone</code> 指定首批可用区：</p>
+
+      <pre><code>tdr deploy edge-gateway \
+  --canary \
+  --zone cn-east-1a \
+  --step 25 \
+  --interval 10m \
+  --rollback-on "error_rate&gt;0.01"</code></pre>
+
+      <details>
+        <summary>回滚步骤（仅在指标恶化时展开）</summary>
+        <p>若任一批次错误率超过 1% 或 P99 延迟较基线上涨超过 30%，立即执行回滚：</p>
+        <ol>
+          <li>运行 <code>tdr rollback edge-gateway --to last-stable</code>。</li>
+          <li>确认所有可用区流量回到旧版本，错误率回落基线。</li>
+          <li>在事故频道登记一次回滚记录，注明触发指标与时间。</li>
+        </ol>
+      </details>
+    </article>
+
+    <footer class="site-chrome">
+      <p>© 2026 Talon 平台工程 · 内部文档，请勿外传</p>
+    </footer>
+  </body>
+</html>

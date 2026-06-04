@@ -30,7 +30,31 @@ import { toString as mdastToString } from 'mdast-util-to-string'
 import { parse as parseYaml } from 'yaml'
 
 import type { Plugin } from 'unified'
-import type { Root, RootContent, Code, Blockquote, Paragraph, Html, List, ListItem, Nodes } from 'mdast'
+import type {
+  Root, RootContent, Code, Blockquote, Paragraph, Html, List, ListItem, Nodes,
+  Table, TableRow, TableCell, Heading, ThematicBreak,
+} from 'mdast'
+
+import {
+  matchAdmonition,
+  parseSrcMeta,
+  makeId,
+  escapeText,
+  escapeAttr,
+  stripParagraphWrap,
+  extractFirstHeading,
+  detailsSummaryToC,
+  STD_HTML_TAGS,
+  tableToKv,
+  dividerFromHeading,
+} from './uplift-shared'
+
+// Re-exported so CLI / browser callers reach the unified dispatcher and the
+// document wrapper through the same module the build entry already bundles.
+// markdown.ts ↔ convert.ts is an intentional, function-only ESM cycle.
+export { convert } from './convert'
+export type { ConvertOptions, SourceExt } from './convert'
+export { wrapDocument, extractFirstHeading }
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
@@ -98,6 +122,8 @@ export async function mdToTdr(
     .use(promoteSourceCodeBlocks, { warnings })
     .use(promotePlainCodeBlocks)
     .use(promoteTaskLists, { warnings })
+    .use(promoteTables)
+    .use(promoteHeadingDividers)
     .use(promoteDetailsSummary)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeStringify, { allowDangerousHtml: true })
@@ -153,19 +179,11 @@ const extractFrontmatter: Plugin<[{ sink: Frontmatter; warnings: string[] }], Ro
 //
 // Anything else is left as a normal <blockquote>.
 
-// Matches `[!KIND]` either as the whole first line of the paragraph (canonical
-// GitHub form: a marker line + body lines underneath) OR as a prefix when the
-// blockquote got serialised into one paragraph.
-const ADMONITION_GFM = /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][\s\n]*/i
-const ADMONITION_INLINE_EN = /^(NOTE|TIP|IMPORTANT|WARNING|CAUTION|DANGER|INFO)\s*[:：]\s*/i
-const ADMONITION_INLINE_ZH = /^(注意|警告|提示|重要|危险|信息|风险)\s*[:：]\s*/
-
-const KIND_MAP: Record<string, string> = {
-  NOTE: 'note', TIP: 'ok', IMPORTANT: 'warn', WARNING: 'warn',
-  CAUTION: 'bad', DANGER: 'bad', INFO: 'info',
-  注意: 'note', 提示: 'note', 警告: 'warn', 重要: 'warn',
-  风险: 'warn', 危险: 'bad', 信息: 'info',
-}
+// A blockquote that opens with an admonition marker becomes a kind-specific
+// <call>; a plain blockquote (no marker) becomes a neutral <call k="note">.
+// Both branches live in one visitor so a blockquote is processed exactly once.
+// Skipped: blockquotes with no paragraph/text body (e.g. nested-only) — those
+// stay a native <blockquote>.
 
 const promoteAdmonitions: Plugin<[{ warnings: string[] }], Root> = () => (tree) => {
   visit(tree, 'blockquote', (node: Blockquote, idx, parent) => {
@@ -176,38 +194,22 @@ const promoteAdmonitions: Plugin<[{ warnings: string[] }], Root> = () => (tree) 
     if (first.type !== 'paragraph') return
 
     const firstText = mdastToString(first)
+    const m = matchAdmonition(firstText)
 
-    // GFM-style: first line / first paragraph starts with `[!KIND]`.
-    let m = firstText.match(ADMONITION_GFM)
-    let kind: string | null = null
+    let kind: string
     let bodyStart = 0
 
-    if (m) {
-      kind = KIND_MAP[m[1].toUpperCase()] ?? 'info'
-      // If the entire first paragraph is JUST the marker, drop it; otherwise
-      // strip the marker prefix from the first paragraph's first text node.
-      if (firstText.trim() === m[0].trim()) {
-        bodyStart = 1
-      } else {
-        stripPrefixFromParagraph(first as Paragraph, m[0])
+    if (m.kind) {
+      kind = m.kind
+      if (m.markerOnly) {
+        bodyStart = 1 // first paragraph was just the marker — drop it
+      } else if (m.prefix) {
+        stripPrefixFromParagraph(first as Paragraph, m.prefix)
       }
     } else {
-      // Inline-style: first paragraph starts with `KIND:` / `KIND：`.
-      const enMatch = firstText.match(ADMONITION_INLINE_EN)
-      const zhMatch = firstText.match(ADMONITION_INLINE_ZH)
-      if (enMatch) {
-        kind = KIND_MAP[enMatch[1].toUpperCase()] ?? 'info'
-        // Drop the prefix from the first paragraph's first text node.
-        stripPrefixFromParagraph(first as Paragraph, enMatch[0])
-        bodyStart = 0
-      } else if (zhMatch) {
-        kind = KIND_MAP[zhMatch[1]] ?? 'info'
-        stripPrefixFromParagraph(first as Paragraph, zhMatch[0])
-        bodyStart = 0
-      }
+      // Plain blockquote, no marker → neutral note callout.
+      kind = 'note'
     }
-
-    if (!kind) return
 
     // Render an HTML <call> with the remaining paragraphs as inner HTML.
     // We can't recursively re-emit mdast inside a custom HTML node without
@@ -264,11 +266,6 @@ function inlineChildrenToHtml(p: Paragraph): string {
     .join('')
 }
 
-const escapeText = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-const escapeAttr = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
-
 // ─── L2: code fences with `file:...` info → <src> ──────────────────────────
 //
 // Conventions accepted on the fence info string:
@@ -282,16 +279,12 @@ const escapeAttr = (s: string) =>
 //     <pre><code>...</code></pre>
 //   </src>
 
-const SRC_META_RE = /(?:^|\s)(?:file:|path=)?([^\s:]+\.[a-z]{1,8})(?::(\d+(?:-\d+)?))?/i
-
 const promoteSourceCodeBlocks: Plugin<[{ warnings: string[] }], Root> = () => (tree) => {
   visit(tree, 'code', (node: Code, idx, parent) => {
     if (!parent || typeof idx !== 'number') return
-    const meta = node.meta ?? ''
-    const m = meta.match(SRC_META_RE)
-    if (!m) return
+    const { path } = parseSrcMeta(node.meta ?? '')
+    if (!path) return
 
-    const path = m[2] ? `${m[1]}:${m[2]}` : m[1]
     const lang = node.lang ?? ''
     const codeHtml = `<pre><code class="language-${escapeAttr(lang)}">${escapeText(node.value)}</code></pre>`
     const id = makeId(path)
@@ -301,13 +294,6 @@ const promoteSourceCodeBlocks: Plugin<[{ warnings: string[] }], Root> = () => (t
     }
     parent.children.splice(idx, 1, replacement)
   })
-}
-
-function makeId(seed: string): string {
-  return seed.toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 48)
 }
 
 // ─── L2: plain code fences → <cb> ──────────────────────────────────────────
@@ -359,10 +345,46 @@ const promoteTaskLists: Plugin<[{ warnings: string[] }], Root> = () => (tree) =>
   })
 }
 
-function stripParagraphWrap(html: string): string {
-  // If body is a single <p>…</p>, drop the wrapper so <ck> renders flat.
-  const m = html.match(/^<p>([\s\S]*)<\/p>$/)
-  return m ? m[1] : html
+// ─── L2: two-column GFM table → <kv> ───────────────────────────────────────
+// A 2-column table reads as a key/value list under the conservative guards in
+// tableToKv (≤ KV_MAX_ROWS rows, key-ish header, simple cells). Anything else
+// stays a native <table> — the archetype CSS styles those. Runs BEFORE
+// remark-rehype so we can replace the mdast `table` node wholesale.
+
+const promoteTables: Plugin<[], Root> = () => (tree) => {
+  visit(tree, 'table', (node: Table, idx, parent) => {
+    if (!parent || typeof idx !== 'number') return
+    // mdast: a Table's children ARE TableRow nodes; the first is the header.
+    const allRows = node.children as TableRow[]
+    if (allRows.length === 0) return
+    const cellText = (cell: TableCell) => mdastToString(cell).trim()
+    const header = (allRows[0]?.children ?? []).map(cellText)
+    const bodyRows = allRows.slice(1).map((r) => r.children.map(cellText))
+
+    const kv = tableToKv(header, bodyRows)
+    if (!kv) return // keep the native <table>
+    parent.children.splice(idx, 1, { type: 'html', value: kv } as Html)
+  })
+}
+
+// ─── L2: `---` immediately above a heading → labeled <divider> ─────────────
+// A thematicBreak directly followed by a heading is a visual section separator
+// whose label is that heading. H1 is exempt (it feeds the document title) and
+// a standalone `---` stays a native <hr>. Frontmatter `---` is already consumed
+// by extractFrontmatter, so it is never seen here.
+
+const promoteHeadingDividers: Plugin<[], Root> = () => (tree) => {
+  visit(tree, 'thematicBreak', (_node: ThematicBreak, idx, parent) => {
+    if (!parent || typeof idx !== 'number') return
+    const next = parent.children[idx + 1]
+    if (!next || next.type !== 'heading') return
+    const heading = next as Heading
+    if (heading.depth === 1) return // never consume the title H1
+
+    const label = mdastToString(heading)
+    // Replace BOTH the thematicBreak and the heading with one <divider>.
+    parent.children.splice(idx, 2, { type: 'html', value: dividerFromHeading(label) } as Html)
+  })
 }
 
 // ─── L2: <details><summary>…</summary>…</details> → <c t="…"> ─────────────
@@ -372,14 +394,7 @@ function stripParagraphWrap(html: string): string {
 
 const promoteDetailsSummary: Plugin<[], Root> = () => (tree) => {
   visit(tree, 'html', (node: Html) => {
-    node.value = node.value.replace(
-      /<details(\s[^>]*)?>\s*<summary>([\s\S]*?)<\/summary>/g,
-      (_m: string, attrs: string | undefined, summary: string) => {
-        const title = summary.replace(/<[^>]+>/g, '').trim()
-        const open = attrs && /\bopen\b/i.test(attrs) ? ' o="true"' : ''
-        return `<c t="${escapeAttr(title)}"${open}>`
-      },
-    ).replace(/<\/details>/g, '</c>')
+    node.value = detailsSummaryToC(node.value)
   })
 }
 
@@ -419,12 +434,6 @@ ${fragment}
 `
 }
 
-function extractFirstHeading(fragment: string): string | null {
-  const m = fragment.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
-  if (!m) return null
-  return m[1].replace(/<[^>]+>/g, '').trim() || null
-}
-
 // ─── Plain Markdown render (NO TDR uplift) ─────────────────────────────────
 //
 // A vanilla remark→rehype pass with none of the L2 plugins, used to show what
@@ -435,15 +444,8 @@ function extractFirstHeading(fragment: string): string | null {
 // GitHub's HTML sanitiser — so a decision block simply doesn't appear. Standard
 // HTML (e.g. <details>) is left native. Frontmatter is stripped, not rendered.
 
-// Standard tags a real markdown viewer renders natively. Anything else is a TDR
-// custom tag and gets dropped.
-const STD_HTML_TAGS = new Set([
-  'details', 'summary', 'a', 'b', 'i', 'em', 'strong', 'code', 'pre', 'br',
-  'hr', 'img', 'ul', 'ol', 'li', 'p', 'div', 'span', 'blockquote', 'table',
-  'thead', 'tbody', 'tr', 'th', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'kbd', 'sup', 'sub', 'mark', 'del', 'ins',
-])
-
+// Standard tags a real markdown viewer renders natively (STD_HTML_TAGS, from
+// uplift-shared). Anything else is a TDR custom tag and gets dropped.
 const dropCustomTags: Plugin<[], Root> = () => (tree) => {
   const walk = (node: { children?: RootContent[] }) => {
     if (!node.children) return

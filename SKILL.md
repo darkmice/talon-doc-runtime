@@ -18,7 +18,7 @@ npx tdr critique path/to/your.html   # structural & style lint
 npx tdr balance  path/to/your.html   # visual budget (heavy components vs <h2>)
 ```
 
-`tdr` ships as a `bin` on `@talon-ui/doc-runtime`. After `npm install` (or `npx -p @talon-ui/doc-runtime …`) the three subcommands are available: `tdr format`, `tdr critique`, `tdr balance`. If a checker reports errors, fix them before handing the document to the user. Warnings are advisory but worth reviewing.
+`tdr` ships as a `bin` on `@talon-ui/doc-runtime`. After `npm install` (or `npx -p @talon-ui/doc-runtime …`) the subcommands are available: `tdr convert`, `tdr critique`, `tdr balance` (`tdr format` is a back-compat alias for `convert --ext md`). If a checker reports errors, fix them before handing the document to the user. Warnings are advisory but worth reviewing.
 
 ## Output Mode
 
@@ -34,17 +34,20 @@ Default to standalone HTML when creating a local artifact for review. Default to
 TDR accepts two input flavors — pick by audience:
 
 - **Direct HTML** (the DSL): write `<d>` / `<call>` / `<src>` / `<branch>` etc. directly. Most expressive, lowest token cost when many components are needed. Use when the user asks for an HTML artifact.
-- **TDR-flavored Markdown**: write normal Markdown with five lightweight conventions — GFM admonitions (`> [!NOTE]` / `> 注意：…`) become `<call>`, code fences with `file:path:lines` become `<src>`, GFM task lists become `<chk>`, `<details>/<summary>` become `<c>`, YAML frontmatter sets archetype/title/theme. Use when the user asks for "a markdown doc" or hands you `.md` input.
+- **TDR-flavored Markdown**: write normal Markdown with lightweight conventions — GFM admonitions (`> [!NOTE]` / `> 注意：…`) become `<call>`, a plain blockquote with no admonition marker becomes `<call k="note">`, code fences with `file:path:lines` become `<src>`, GFM task lists become `<chk>`, `<details>/<summary>` become `<c>`, a conservative two-column table becomes `<kv>`, a `---` directly above a heading becomes `<divider t="…">`, YAML frontmatter sets archetype/title/theme. Use when the user asks for "a markdown doc" or hands you `.md` input.
 
-Convert Markdown → HTML with the bundled CLI:
+`tdr convert` is the primary subcommand — it routes by file extension (`.md` / `.markdown` / `.txt` / `.html` / `.htm`):
 
 ```bash
-npx tdr format docs/spec.md -o spec.html             # full standalone HTML
-npx tdr format docs/spec.md --fragment > body.html   # body fragment only
-npx tdr format docs/spec.md --archetype editorial-longform
+npx tdr convert docs/spec.md  -o spec.html              # Markdown → full standalone HTML
+npx tdr convert notes.txt     -o notes.html             # plain text → heuristic Markdown → TDR
+npx tdr convert page.html     -o page.tdr.html          # HTML → extract main + shared uplift
+npx tdr convert docs/spec.md  --fragment > body.html    # body fragment only
+npx tdr convert docs/spec.md  --archetype editorial-longform
+npx tdr convert a.md b.txt c.html -o out/               # batch → out/<base>.html
 ```
 
-Markdown conventions are documented in `docs/markdown-flavor.md`. Native TDR tags **always** work inside Markdown — the L1+L2 transform leaves them untouched. Mix freely.
+`.txt` runs a heuristic (blank-line paragraphs, `- * • · / N.` bullets, 4-space-indent code, bare-URL autolink) then the Markdown pipeline. `.html` extracts main content (`article` › `main` › `body`) and applies the shared hast uplift (`blockquote` → `<call>`, two-column table → `<kv>`, `details` → `<c>`; note an HTML `<pre>` stays `<cb>`). Force a pipeline with `--ext md|txt|html`. `tdr format` is a back-compat alias for `convert --ext md`. Conventions are documented in `docs/markdown-flavor.md`. Native TDR tags **always** work inside Markdown — the L1+L2 transform leaves them untouched. Mix freely.
 
 ## Core Rules
 
@@ -244,10 +247,12 @@ setArchetype('my-style')
 Read `docs/markdown-flavor.md` for the full conversion spec. Quick recap:
 
 - YAML frontmatter (`---` block at top) sets `archetype` / `title` / `lang` / `theme`.
-- `> [!NOTE]` / `> [!WARNING]` / `> 注意：` / `> NOTE:` → `<call>`.
+- `> [!NOTE]` / `> [!WARNING]` / `> 注意：` / `> NOTE:` → `<call>`; a plain blockquote with no marker → `<call k="note">`.
 - Code fences with `file:path:lines` info → `<src>`.
 - GFM task lists → `<chk>` / `<ck>`.
+- A conservative two-column table (exactly 2 columns, ≤8 body rows, short key-ish header, simple cells) → `<kv>` / `<row k v>`; otherwise it stays `<table>`.
+- `---` directly above a heading (not H1) → `<divider t="that heading">`; a standalone `---` stays `<hr>`.
 - `<details><summary>…</summary>…</details>` → `<c>`.
 - Direct TDR tags (`<d>`, `<branch>`, etc.) pass through untouched — mix freely.
 
-Convert with `tdr format input.md [-o out.html]`.
+`.txt` and `.html` inputs are also supported and run the same uplift rules (`.txt` via a heuristic Markdown step; `.html` via shared hast helpers on the extracted main content). Convert with `tdr convert input.{md,txt,html} [-o out.html]` (`tdr format` = `convert --ext md`).

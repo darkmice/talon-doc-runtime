@@ -300,6 +300,17 @@ lang: zh-CN
 <span class="adm">&gt; [!WARNING]
 &gt; 这个缺陷在低并发下几乎不可见 — 只有重试窗口与首次写入重叠时才触发。</span>
 
+<span class="adm">&gt; 复盘当天我们把链路上每个服务的当前状态拉了一遍，确认止血没有遗漏。没有 `[!XXX]` 标记、也没有「注意：」前缀的普通引用，会被当成补充说明，自动 uplift 成 `&lt;call k="note"&gt;`。</span>
+
+故障期间各服务的状态如下。两列、键名规整的小表格会被识别成键值对，转成 `&lt;kv&gt;`：
+
+| 服务 | 状态 |
+| --- | --- |
+| 支付网关 | 降级 |
+| 幂等校验 | 异常 |
+| 对账服务 | 正常 |
+| 退款队列 | 积压 |
+
 代码引用直接写在 fence 的 info 里，带上 `file:path:lines`：
 
 <span class="fence">```ts file:src/payment/idempotency.ts:42-46</span>
@@ -317,7 +328,10 @@ function keyFor(req: Request) {
   &lt;so&gt;客户端生成 UUIDv7 并透传，重试天然去重。&lt;/so&gt;
 &lt;/d&gt;</span>
 
+---
 <span class="h">## 收尾清单</span>
+
+紧贴在标题上方的 `---` 不会变成普通分隔线，而是带上后面这个标题文本，转成 `&lt;divider t="收尾清单"&gt;`。单独成段的 `---` 仍然是 `&lt;hr&gt;`。
 
 GFM task list 会变成 `&lt;chk&gt;`：
 
@@ -350,6 +364,36 @@ function keyFor(req: Request) {
 <p>[!WARNING]
 这个缺陷在低并发下几乎不可见 — 只有重试窗口与首次写入重叠时才触发。</p>
 </blockquote>
+<blockquote>
+<p>复盘当天我们把链路上每个服务的当前状态拉了一遍，确认止血没有遗漏。没有 <code>[!XXX]</code> 标记、也没有「注意：」前缀的普通引用，会被当成补充说明，自动 uplift 成 <code>&#x3C;call k="note"></code>。</p>
+</blockquote>
+<p>故障期间各服务的状态如下。两列、键名规整的小表格会被识别成键值对，转成 <code>&#x3C;kv></code>：</p>
+<table>
+<thead>
+<tr>
+<th>服务</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>支付网关</td>
+<td>降级</td>
+</tr>
+<tr>
+<td>幂等校验</td>
+<td>异常</td>
+</tr>
+<tr>
+<td>对账服务</td>
+<td>正常</td>
+</tr>
+<tr>
+<td>退款队列</td>
+<td>积压</td>
+</tr>
+</tbody>
+</table>
 <p>代码引用直接写在 fence 的 info 里，带上 <code>file:path:lines</code>：</p>
 <pre><code class="language-ts">function keyFor(req: Request) {
   return hash(req.body) + Date.now()   // ← Date.now() 让 key 每次都不同
@@ -357,7 +401,9 @@ function keyFor(req: Request) {
 </code></pre>
 <h2>决策</h2>
 <p>需要精确控制组件时，直接写原生 TDR 标签 —— 它们在 Markdown 里原样透传：</p>
+<hr>
 <h2>收尾清单</h2>
+<p>紧贴在标题上方的 <code>---</code> 不会变成普通分隔线，而是带上后面这个标题文本，转成 <code>&#x3C;divider t="收尾清单"></code>。单独成段的 <code>---</code> 仍然是 <code>&#x3C;hr></code>。</p>
 <p>GFM task list 会变成 <code>&#x3C;chk></code>：</p>
 <ul class="contains-task-list">
 <li class="task-list-item"><input type="checkbox" checked disabled> 紧急止血：临时关闭重试</li>
@@ -394,6 +440,14 @@ function keyFor(req: Request) {
 <h2>根因</h2>
 <p>幂等键由服务端在收到请求后生成，无法跨重试保持一致。客户端重试时拿到的是<strong>两个不同的 key</strong>，于是被当成两笔独立支付。</p>
 <call k="warn"><p>这个缺陷在低并发下几乎不可见 — 只有重试窗口与首次写入重叠时才触发。</p></call>
+<call k="note"><p>复盘当天我们把链路上每个服务的当前状态拉了一遍，确认止血没有遗漏。没有 <code>[!XXX]</code> 标记、也没有「注意：」前缀的普通引用，会被当成补充说明，自动 uplift 成 <code>&lt;call k="note"&gt;</code>。</p></call>
+<p>故障期间各服务的状态如下。两列、键名规整的小表格会被识别成键值对，转成 <code>&#x3C;kv></code>：</p>
+<kv>
+<row k="支付网关" v="降级"></row>
+<row k="幂等校验" v="异常"></row>
+<row k="对账服务" v="正常"></row>
+<row k="退款队列" v="积压"></row>
+</kv>
 <p>代码引用直接写在 fence 的 info 里，带上 <code>file:path:lines</code>：</p>
 <src id="src-payment-idempotency-ts-42-46" p="src/payment/idempotency.ts:42-46" l="ts"><pre><code class="language-ts">function keyFor(req: Request) {
   return hash(req.body) + Date.now()   // ← Date.now() 让 key 每次都不同
@@ -404,7 +458,8 @@ function keyFor(req: Request) {
   <because>服务端生成无法跨重试保持一致。</because>
   <so>客户端生成 UUIDv7 并透传，重试天然去重。</so>
 </d>
-<h2>收尾清单</h2>
+<divider t="收尾清单"></divider>
+<p>紧贴在标题上方的 <code>---</code> 不会变成普通分隔线，而是带上后面这个标题文本，转成 <code>&#x3C;divider t="收尾清单"></code>。单独成段的 <code>---</code> 仍然是 <code>&#x3C;hr></code>。</p>
 <p>GFM task list 会变成 <code>&#x3C;chk></code>：</p>
 <chk>
 <ck k="true">紧急止血：临时关闭重试</ck>

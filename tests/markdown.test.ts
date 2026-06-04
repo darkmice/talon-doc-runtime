@@ -88,11 +88,12 @@ describe('mdToTdr', () => {
       expect(html).toContain('写中文也行。')
     })
 
-    it('leaves a plain blockquote alone', async () => {
+    it('promotes a plain blockquote (no marker) to a neutral note callout', async () => {
       const md = '> Just a normal quote.'
       const { html } = await mdToTdr(md, { document: false })
-      expect(html).toContain('<blockquote>')
-      expect(html).not.toContain('<call')
+      expect(html).toContain('<call k="note">')
+      expect(html).toContain('Just a normal quote.')
+      expect(html).not.toContain('<blockquote>')
     })
   })
 
@@ -188,6 +189,75 @@ describe('mdToTdr', () => {
       expect(captured).not.toBeNull()
       expect((captured!.fm as { archetype: string }).archetype).toBe('editorial-longform')
       expect(captured!.md).toBe(md)
+    })
+  })
+
+  describe('two-column table → <kv>', () => {
+    it('promotes a small key-ish 2-column table to <kv>', async () => {
+      const md = [
+        '| Key | Value |',
+        '| --- | --- |',
+        '| owner | dark |',
+        '| status | active |',
+      ].join('\n')
+      const { html } = await mdToTdr(md, { document: false })
+      expect(html).toContain('<kv>')
+      expect(html).toContain('<row k="owner" v="dark">')
+      expect(html).toContain('<row k="status" v="active">')
+      expect(html).not.toContain('<table>')
+    })
+
+    it('keeps a 3-column table as a native <table>', async () => {
+      const md = [
+        '| a | b | c |',
+        '| --- | --- | --- |',
+        '| 1 | 2 | 3 |',
+      ].join('\n')
+      const { html } = await mdToTdr(md, { document: false })
+      expect(html).toContain('<table>')
+      expect(html).not.toContain('<kv>')
+    })
+
+    it('keeps a long 2-column table (>8 rows) as a <table>', async () => {
+      const rows = Array.from({ length: 10 }, (_, i) => `| k${i} | v${i} |`)
+      const md = ['| Key | Value |', '| --- | --- |', ...rows].join('\n')
+      const { html } = await mdToTdr(md, { document: false })
+      expect(html).toContain('<table>')
+      expect(html).not.toContain('<kv>')
+    })
+
+    it('keeps a 2-column table whose header is a sentence as a <table>', async () => {
+      const md = [
+        '| This is a whole descriptive sentence here | Value |',
+        '| --- | --- |',
+        '| a | b |',
+      ].join('\n')
+      const { html } = await mdToTdr(md, { document: false })
+      expect(html).toContain('<table>')
+      expect(html).not.toContain('<kv>')
+    })
+  })
+
+  describe('--- above a heading → <divider>', () => {
+    it('collapses a thematicBreak + following heading into a labeled divider', async () => {
+      const md = '# Title\n\nintro\n\n---\n\n## Section Two\n\nbody'
+      const { html } = await mdToTdr(md, { document: false })
+      expect(html).toContain('<divider t="Section Two">')
+      expect(html).not.toMatch(/<hr\s*\/?>/)
+    })
+
+    it('leaves a standalone --- as a native <hr>', async () => {
+      const md = 'para one\n\n---\n\npara two'
+      const { html } = await mdToTdr(md, { document: false })
+      expect(html).toMatch(/<hr\s*\/?>/)
+      expect(html).not.toContain('<divider')
+    })
+
+    it('never consumes an H1 after ---', async () => {
+      const md = 'intro\n\n---\n\n# Big Title\n\nbody'
+      const { html } = await mdToTdr(md, { document: false })
+      expect(html).toContain('<h1>Big Title</h1>')
+      expect(html).not.toContain('<divider')
     })
   })
 

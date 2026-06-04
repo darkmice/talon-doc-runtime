@@ -284,6 +284,20 @@ export const EDITORIAL_LONGFORM_CSS = `
   }
 }
 
+/* Below 700px the editorial measure (62ch) no longer fits a phone — let the
+   main column take the full available width so prose doesn't overflow. The
+   shared base.css mobile rules (640/480px) collapse the nested components. */
+@media (max-width: 700px) {
+  [data-archetype="editorial-longform"] {
+    --tdr-measure: 100%;
+    --tdr-gutter-left: 0px;
+    --tdr-aside-right: 0px;
+  }
+  [data-archetype="editorial-longform"] .tdr-doc {
+    grid-template-columns: [page-start main-start] minmax(0, 1fr) [main-end page-end];
+  }
+}
+
 /* ═════════════════════════════════════════════════════════
    Typography
    ═════════════════════════════════════════════════════════ */

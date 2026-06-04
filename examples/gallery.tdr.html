@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="zh-CN" data-archetype="business-document">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Talon Doc Runtime — 组件参考画廊</title>
+  </head>
+  <body>
+    <main class="tdr-doc">
+
+      <!-- ════════════════════════════════════════════════════════════
+           标题区 + 题记 + archetype/theme 切换
+           ════════════════════════════════════════════════════════════ -->
+
+      <h1>Talon Doc Runtime · 组件参考画廊</h1>
+      <p class="tdr-subtitle">穷举式参考 — 每个组件独立成节，列出关键变体。示例主题：协同画布 Realtime Canvas 的一次发布评审。</p>
+
+      <p>
+        <btn a="archetype" to="editorial-longform">长文风</btn>
+        <btn a="theme" to="dark">深色</btn>
+        <btn a="theme" to="light">浅色</btn>
+      </p>
+
+      <lead>这份画廊不是叙事文档，而是一张速查表 — 你可以从上往下扫一遍，看到 DSL 的完整表面：决策、提示、证据、流程、对比、图表、文件清单、时间线、风险表，每个组件都连同它的主要状态变体一起出现。</lead>
+
+      <divider t="决策与结论"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           1. 决策 <d> / <decision>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>决策与结论</h2>
+
+      <h3>&lt;d&gt; / &lt;decision&gt; — 带 因/果 的结论卡</h3>
+      <p>用 <code>&lt;because&gt;</code>/<code>&lt;so&gt;</code> 表达前提到结论；<code>s=</code> 控制状态色，<code>v=</code> 是裁决徽章。</p>
+
+      <d s="ok" v="已采纳" t="协同光标改用 CRDT 合并">
+        <because>当前的「最后写入获胜」会在两人同时拖拽同一图层时丢笔，已收到 12 起投诉。</because>
+        <so>切换到 CRDT，本地先应用、后台收敛，冲突由数据结构天然消解，不再依赖服务器仲裁。</so>
+      </d>
+
+      <d s="bad" v="否决" t="为协同加全局悲观锁">
+        <because>提案是同一画布同一时刻只允许一人编辑，能彻底避免冲突。</because>
+        <so>否决：违背「实时协同」的产品定义，把多人体验降级成排队，且锁服务本身会成为新的单点。</so>
+      </d>
+
+      <d s="warn" v="有条件通过" t="离线编辑暂存到 IndexedDB">
+        <because>弱网用户希望断线后仍能作画，重连再同步。</because>
+        <so>通过，但限定单画布缓存上限 50MB，并要求重连时给出明确的合并提示，避免静默覆盖。</so>
+      </d>
+
+      <d s="note" v="待定" t="历史版本是否做无限回溯">
+        <because>设计侧希望像 Figma 一样支持任意时间点回放。</because>
+        <so>暂列为探索项 — 需先评估快照存储成本，下个迭代给结论。</so>
+      </d>
+
+      <divider t="提示框与折叠"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           2. 提示框 <call> / <callout>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>提示框与折叠</h2>
+
+      <h3>&lt;call&gt; / &lt;callout&gt; — 五种 k= 类型</h3>
+      <p>覆盖 note / ok / warn / bad / info，并演示带 <code>t=</code> 标题与不带标题两种形态。</p>
+
+      <call k="note" t="设计备注">协同光标颜色取自用户头像主色，确保多人时易于区分。</call>
+      <call k="ok" t="验收通过">CRDT 合并在 50 人压测下未出现丢笔，端到端延迟 P99 84ms。</call>
+      <call k="warn" t="注意">离线缓存上限调整后需同步更新移动端，否则两端行为不一致。</call>
+      <call k="bad" t="阻断项">SDK 在 Safari 16 下 WebSocket 重连失败，发布前必须修复。</call>
+      <call k="info">不带标题的 info 提示：本节所有数据来自 5 月预发环境压测。</call>
+
+      <h3>&lt;c&gt; / &lt;collapse&gt; — 展开与折叠</h3>
+      <p><code>o</code> 让折叠默认展开；不写则默认收起。</p>
+
+      <c t="默认展开：合并算法选型记录" o>
+        <p>对比过 OT 与 CRDT。OT 实现简单但需要中心服务器做变换；CRDT 客户端复杂但天然支持离线与去中心，最终选 CRDT。</p>
+      </c>
+      <c t="默认折叠：被否决的方案存档">
+        <p>悲观锁、乐观锁 + 版本号、操作日志回放三种方案的详细推演记录，归档备查。</p>
+      </c>
+
+      <h3>&lt;x&gt; — 行内徽章的全部状态</h3>
+      <p>同一行展示 ok / bad / warn / note / info / active / accent 七种状态。</p>
+      <p>
+        合并引擎 <x s="ok">已上线</x>
+        离线同步 <x s="active">灰度中</x>
+        无限回溯 <x s="note">探索</x>
+        Safari 兼容 <x s="bad">阻断</x>
+        移动端对齐 <x s="warn">待跟进</x>
+        埋点 <x s="info">默认</x>
+        关键路径 <x s="accent">P0</x>
+      </p>
+
+      <divider t="证据与引用"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           3. 证据：<src> / <cb> / <ref> / <btn>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>证据与代码</h2>
+
+      <h3>&lt;src&gt; — 带路径行号的源码引用</h3>
+      <p><code>p=</code> 给出「路径:起-止」自动起始行号，<code>l=</code> 指定语言，子 <code>&lt;note&gt;</code> 作为脚注。</p>
+
+      <c t="证据片段" o>
+        <src id="merge-src" p="src/crdt/merge.ts:42-47" l="ts">
+          <pre><code>export function mergeOps(local: Op[], remote: Op[]): Op[] {
+  const merged = rga.integrate(local, remote)
+  if (merged.conflicts.length) markForReview(merged.conflicts)
+  return merged.ops
+}</code></pre>
+          <note>冲突不再丢弃，而是进入 <code>markForReview</code> 队列等待收敛。</note>
+        </src>
+      </c>
+
+      <h3>&lt;cb&gt; — 简化代码块（无行号）</h3>
+      <p>不带 <code>l=</code> 的纯文本块，与带 <code>f=</code> 文件标签 + <code>l=</code> 高亮的块对照。</p>
+
+      <cb><pre><code>WS_URL=wss://canvas.example.com/sync
+MAX_OFFLINE_MB=50</code></pre></cb>
+
+      <cb f="src/sync/client.ts" l="ts"><pre><code>const sock = new ReconnectingWebSocket(WS_URL, { maxRetries: 8 })
+sock.on('message', applyRemoteOps)</code></pre></cb>
+
+      <h3>&lt;ref&gt; 与 &lt;btn&gt; — 跳转链接与受控动作</h3>
+      <p><code>&lt;ref&gt;</code> 点击会定位并高亮目标；<code>&lt;btn&gt;</code> 的 <code>a=</code> 声明动作意图。</p>
+      <p>合并实现见 <ref to="merge-src" x="merge.ts:42"></ref>。</p>
+      <p>
+        <btn a="open" to="merge-src">展开证据</btn>
+        <btn a="jump" to="merge-src">定位证据</btn>
+        <btn a="copy" to="merge-src">复制片段</btn>
+        <btn a="theme" to="dark">切深色</btn>
+        <btn a="archetype" to="editorial-longform">切长文风</btn>
+      </p>
+
+      <divider t="指标 · 流程 · 步骤"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           4. 指标 <ms> / <m>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>指标</h2>
+
+      <h3>&lt;ms&gt; / &lt;m&gt; — 指标行</h3>
+      <p>自动栅格排布，每个 <code>&lt;m&gt;</code> 一个数值 + 标签。</p>
+
+      <ms>
+        <m v="84ms" t="合并 P99 延迟"></m>
+        <m v="50" t="单画布并发上限"></m>
+        <m v="0" t="压测丢笔数"></m>
+        <m v="99.95%" t="同步成功率"></m>
+      </ms>
+
+      <!-- ════════════════════════════════════════════════════════════
+           5. 流程 <flow> / <n> / <arr>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>流程</h2>
+
+      <h3>&lt;flow&gt; 横向 — 节点带 s= / meta= / sub=</h3>
+      <p>默认横向排布，<code>&lt;n&gt;</code> 为节点，<code>&lt;arr&gt;</code> 为带标签箭头。</p>
+
+      <flow>
+        <n s="accent" sub="本地" meta="0ms">本地落笔</n>
+        <arr t="入队"></arr>
+        <n sub="客户端" meta="批处理">操作合并</n>
+        <arr t="WS"></arr>
+        <n s="ok" sub="服务端" meta="收敛">广播去重</n>
+      </flow>
+
+      <h3>&lt;flow v=true&gt; 竖向</h3>
+      <p>加 <code>v=true</code> 切换为竖排，箭头随之转为向下。</p>
+
+      <flow v="true">
+        <n s="note">客户端断线</n>
+        <arr t="离线缓存"></arr>
+        <n s="warn">IndexedDB 暂存</n>
+        <arr t="重连"></arr>
+        <n s="ok">增量回放并收敛</n>
+      </flow>
+
+      <!-- ════════════════════════════════════════════════════════════
+           6. 步骤 <steps> / <step>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>步骤</h2>
+
+      <h3>&lt;steps&gt; / &lt;step&gt; — 进度条 + 状态 + flag</h3>
+      <p><code>p=</code> 控制顶部进度；每步 <code>s=</code> 取 done / active / todo，可挂 <code>f=</code> 标记。</p>
+
+      <steps p="60">
+        <step s="done" t="CRDT 内核落地" d="本地合并 + 冲突收敛"></step>
+        <step s="done" t="WebSocket 同步层" d="重连与增量补偿"></step>
+        <step s="active" t="离线缓存灰度" d="IndexedDB 暂存上线 10% 用户" f="warn" fl="灰度"></step>
+        <step s="todo" t="移动端对齐" d="iOS / Android SDK 跟进"></step>
+        <step s="todo" t="无限回溯" d="待立项"></step>
+      </steps>
+
+      <divider t="对比与图表"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           7. 优劣对比 <cmp> / <pro> / <con>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>对比</h2>
+
+      <h3>&lt;cmp&gt; / &lt;pro&gt; / &lt;con&gt; — 优势 vs 风险</h3>
+      <p>左列为支持理由，右列为代价与风险。</p>
+
+      <cmp>
+        <pro t="选 CRDT 的收益">
+          <ul>
+            <li>天然支持离线与去中心化</li>
+            <li>无需中心服务器做操作变换</li>
+            <li>合并是确定性的，可重放</li>
+          </ul>
+        </pro>
+        <con t="付出的代价">
+          <ul>
+            <li>客户端内存占用上升约 15%</li>
+            <li>历史压缩算法实现复杂</li>
+            <li>调试需要专用可视化工具</li>
+          </ul>
+        </con>
+      </cmp>
+
+      <!-- ════════════════════════════════════════════════════════════
+           8. 图表 <bars> / <bar> · <sb> / <seg> / <lg>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>图表</h2>
+
+      <h3>&lt;bars&gt; / &lt;bar&gt; — 横向条形，按状态着色</h3>
+      <p><code>p=</code> 是百分比宽度，<code>s=</code> 决定颜色。</p>
+
+      <bars>
+        <bar t="同步成功率" v="99.95%" p="99" s="ok"></bar>
+        <bar t="离线重连成功率" v="92%" p="92" s="warn"></bar>
+        <bar t="Safari 兼容通过率" v="61%" p="61" s="bad"></bar>
+        <bar t="移动端覆盖" v="40%" p="40" s="note"></bar>
+      </bars>
+
+      <h3>&lt;sb&gt; / &lt;seg&gt; / &lt;lg&gt; — 堆叠条 + 图例</h3>
+      <p>各段 <code>p=</code> 之和为 100，图例 <code>&lt;lg&gt;</code> 与段一一对应。</p>
+
+      <sb>
+        <seg p="58" s="ok"></seg>
+        <seg p="24" s="warn"></seg>
+        <seg p="18" s="bad"></seg>
+        <lg t="自动收敛" s="ok"></lg>
+        <lg t="进入复核队列" s="warn"></lg>
+        <lg t="需人工处理" s="bad"></lg>
+      </sb>
+
+      <divider t="键值 · 标签页 · 清单"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           9. 键值 <kv> / <row>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>键值与标签页</h2>
+
+      <h3>&lt;kv&gt; / &lt;row&gt; — 自动识别值类型</h3>
+      <p>值会被推断为 url / num / enum / code，呈现不同视觉。</p>
+
+      <kv>
+        <row k="同步端点" v="wss://canvas.example.com/sync"></row>
+        <row k="合并延迟 P99" v="84ms"></row>
+        <row k="离线缓存上限" v="50MB"></row>
+        <row k="运行模式" v="CRDT_RGA"></row>
+        <row k="核心入口" v="mergeOps()"></row>
+        <row k="文档版本" v="v2.4.0"></row>
+      </kv>
+
+      <h3>&lt;tabs&gt; / &lt;tab&gt; — 标签页</h3>
+      <p>首个 tab 默认激活，点击切换面板。</p>
+
+      <tabs>
+        <tab t="Web">基于 WASM 的 CRDT 内核，主线程外运行，零阻塞渲染。</tab>
+        <tab t="iOS">Swift 封装同一内核，离线缓存走 Core Data。</tab>
+        <tab t="Android">Kotlin 绑定，缓存走 Room，重连策略与 Web 对齐。</tab>
+      </tabs>
+
+      <h3>&lt;chk&gt; / &lt;ck&gt; — 复选清单</h3>
+      <p>带 <code>k</code> 的项为已勾选，不带则未勾选。</p>
+
+      <chk>
+        <ck k>合并内核单元测试覆盖率 ≥ 90%</ck>
+        <ck k>50 人压测无丢笔</ck>
+        <ck>Safari 16 重连修复</ck>
+        <ck>移动端 SDK 行为对齐</ck>
+      </chk>
+
+      <divider t="卡片栅格与文件清单"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           10. 栅格 <grid> / <card> / <foot>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>卡片栅格</h2>
+
+      <h3>&lt;grid c="2"&gt; — 双列卡片，带 &lt;foot&gt;</h3>
+      <p><code>c=</code> 控制列数；卡片可选 <code>&lt;foot&gt;</code> 页脚。</p>
+
+      <grid c="2">
+        <card t="合并内核">
+          <p>RGA 序列 + 因果序号，保证任意顺序收敛到同一结果。</p>
+          <foot>负责人：林越 · 状态 已上线</foot>
+        </card>
+        <card t="同步层">
+          <p>ReconnectingWebSocket + 增量补偿，断线 8 次内自动恢复。</p>
+          <foot>负责人：周宁 · 状态 灰度中</foot>
+        </card>
+      </grid>
+
+      <h3>&lt;grid c="3"&gt; — 三列卡片</h3>
+      <grid c="3">
+        <card t="延迟">本地 0ms 落笔，远端 P99 84ms。</card>
+        <card t="一致性">确定性合并，离线重连零冲突丢失。</card>
+        <card t="成本">客户端内存 +15%，服务端去中心后带宽 -22%。</card>
+      </grid>
+
+      <!-- ════════════════════════════════════════════════════════════
+           11. 文件清单 <files> / <fg> / <f>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>文件清单</h2>
+
+      <h3>&lt;files&gt; / &lt;fg m=&gt; / &lt;f s=&gt; — 按模块分组的改动</h3>
+      <p><code>s=</code> 取 added / modified / deleted，<code>why=</code> 说明用途。</p>
+
+      <files>
+        <fg m="src/crdt">
+          <f p="merge.ts" s="modified" why="冲突进入复核而非丢弃"></f>
+          <f p="rga.ts" s="added" why="RGA 序列数据结构"></f>
+          <f p="lww.ts" s="deleted" why="废弃最后写入获胜逻辑"></f>
+        </fg>
+        <fg m="src/sync">
+          <f p="client.ts" s="modified" why="重连 + 增量补偿"></f>
+          <f p="offline-store.ts" s="added" why="IndexedDB 离线暂存"></f>
+        </fg>
+      </files>
+
+      <divider t="语义对比与解释"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           12. 语义对比 <contrast> / <analogy> / <myth>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>语义对比与解释</h2>
+
+      <h3>&lt;contrast&gt; / &lt;l&gt; / &lt;r&gt; — 同词两义</h3>
+      <p><code>w=</code> 是词，<code>d=</code> 是说明；左右各带 <code>c=</code> 语境。</p>
+
+      <contrast w="合并" d="同一个词在两层含义截然不同">
+        <l c="协同层">把多个用户的并发操作收敛到同一最终状态。</l>
+        <r c="版本层">把一条历史分支的改动并回主线，需要人工确认。</r>
+      </contrast>
+
+      <h3>&lt;analogy&gt; — 类比（s/sd ≈ t/td + why）</h3>
+      <p>用熟悉概念解释陌生概念，<code>why=</code> 给出类比成立的理由。</p>
+
+      <analogy s="多人记账本" sd="每人各记一本，最后对账合一" t="CRDT" td="各端本地先记，后台收敛到一致" why="两者都不依赖单一中心账本，靠规则保证最终一致"></analogy>
+
+      <h3>&lt;myth&gt; / &lt;wrong&gt; / &lt;right&gt; — 纠正误解</h3>
+      <p>上行是常见错误说法，下行是正确表述。</p>
+
+      <myth>
+        <wrong>CRDT 一定比 OT 慢，因为数据结构更重。</wrong>
+        <right>CRDT 本地操作是 O(1)，重的是历史压缩，可异步做，不在交互关键路径上。</right>
+      </myth>
+
+      <divider t="决策树 · 多轨评审"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           13. 决策树 <branch> / <bi> / <kids>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>决策树</h2>
+
+      <h3>&lt;branch r=&gt; / &lt;bi c= s= out=&gt; — 并列分支，含嵌套 &lt;kids&gt;</h3>
+      <p>每个 <code>&lt;bi&gt;</code> 是一种可能情况，<code>out=</code> 是结果；<code>&lt;kids&gt;</code> 下钻子分支。</p>
+
+      <branch r="收到一条远端操作">
+        <bi c="序号已存在" s="ok" out="幂等丢弃，不重复应用">重放或网络重复导致的副本。</bi>
+        <bi c="序号连续" s="ok" out="直接应用到本地状态">正常增量，无需缓冲。</bi>
+        <bi c="序号有空洞" s="warn" out="进入缓冲区等待补齐">
+          中间有操作尚未到达。
+          <kids>
+            <bi c="2s 内补齐" s="ok" out="按序应用，清空缓冲"></bi>
+            <bi c="超时未补齐" s="bad" out="触发全量重新同步"></bi>
+          </kids>
+        </bi>
+      </branch>
+
+      <!-- ════════════════════════════════════════════════════════════
+           14. 多轨评审 <tracks> / <tk>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>多轨评审</h2>
+
+      <h3>&lt;tracks&gt; / &lt;tk t= d= f=&gt; — 各评审轨的结论</h3>
+      <p><code>f=</code> 是该轨的状态标记，决定卡片色。</p>
+
+      <tracks>
+        <tk t="正确性" d="合并确定性已被属性测试覆盖，1 万次随机序列均收敛一致。" f="ok"></tk>
+        <tk t="性能" d="P99 延迟达标，但历史压缩在大画布下偶发 200ms 卡顿。" f="warn"></tk>
+        <tk t="兼容性" d="Safari 16 WebSocket 重连失败，发布前阻断。" f="bad"></tk>
+        <tk t="可观测性" d="埋点已接入，待补充离线场景的看板。" f="note"></tk>
+      </tracks>
+
+      <divider t="发现与证据链"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           15. 发现 <finding> / <detail> · 证据 <evidence> / <ei>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>发现与证据链</h2>
+
+      <h3>&lt;finding t=&gt; / &lt;detail&gt; — 结论 + 展开细节</h3>
+      <p>摘要常驻可见，细节折进 <code>&lt;detail&gt;</code>。</p>
+
+      <finding t="离线重连存在静默覆盖风险">
+        断线超过 30 秒后重连，本地缓存可能覆盖他人改动。
+        <detail>
+          <p>根因：重连后直接以本地序号为准回放，未与服务端做因果比较。修复方案是引入向量时钟，重连先比对再合并，冲突弹出提示。</p>
+        </detail>
+      </finding>
+
+      <h3>&lt;evidence t=&gt; / &lt;ei&gt; — 结论 + 支撑要点</h3>
+      <p>顶部是结论，下面逐条列出支撑证据。</p>
+
+      <evidence t="CRDT 方案的正确性已得到充分验证">
+        <ei>属性测试：1 万次随机并发序列，最终状态全部一致。</ei>
+        <ei>50 人压测：连续作画 30 分钟，零丢笔。</ei>
+        <ei>线上灰度 10% 两周，冲突相关投诉降为 0。</ei>
+      </evidence>
+
+      <divider t="术语 · 时间线 · 风险"></divider>
+
+      <!-- ════════════════════════════════════════════════════════════
+           16. 术语 <term>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>术语</h2>
+
+      <h3>&lt;term w= d= first&gt; — 行内术语，悬停看释义</h3>
+      <p>带 <code>first</code> 的术语会标记为首次出现。</p>
+
+      <p>我们的同步层基于 <term w="CRDT" d="Conflict-free Replicated Data Type，无冲突复制数据类型，多副本可独立修改并最终收敛" first>CRDT</term>，配合 <term w="向量时钟" d="记录各副本逻辑时间的向量，用于判断两次操作的因果先后">向量时钟</term> 判断因果序，从而避免静默覆盖。</p>
+
+      <!-- ════════════════════════════════════════════════════════════
+           17. 时间线 <timeline> / <ev>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>时间线</h2>
+
+      <h3>&lt;timeline&gt; / &lt;ev d= t= s=&gt; — 不同状态的事件</h3>
+      <p><code>s=</code> 决定圆点与时间色，覆盖 ok / active / warn / note。</p>
+
+      <timeline>
+        <ev d="2026-03-02" t="CRDT 内核完成" s="ok">通过属性测试，合并确定性达标。</ev>
+        <ev d="2026-04-18" t="同步层灰度 10%" s="ok">冲突投诉清零。</ev>
+        <ev d="2026-05-09" t="离线缓存灰度" s="active">IndexedDB 暂存上线，正在观察。</ev>
+        <ev d="2026-05-20" t="Safari 兼容修复" s="warn">阻断项，发布前必须完成。</ev>
+        <ev d="2026-06-15" t="无限回溯立项评审" s="note">待定，依赖快照成本评估。</ev>
+      </timeline>
+
+      <!-- ════════════════════════════════════════════════════════════
+           18. 风险表 <risk> / <r>
+           ════════════════════════════════════════════════════════════ -->
+
+      <h2>风险表</h2>
+
+      <h3>&lt;risk&gt; / &lt;r t= sev= lik= mit=&gt; — 严重度 × 可能性</h3>
+      <p>行色由严重度与可能性综合得出；<code>mit=</code> 是缓解措施。</p>
+
+      <risk>
+        <r t="离线重连静默覆盖" sev="high" lik="med" mit="引入向量时钟，重连先比对再合并"></r>
+        <r t="历史压缩偶发卡顿" sev="med" lik="med" mit="改为 Web Worker 异步压缩"></r>
+        <r t="Safari 重连失败" sev="high" lik="high" mit="改用兼容性更好的重连库，发布前修复"></r>
+        <r t="客户端内存上升" sev="low" lik="high" mit="历史按时间窗裁剪，仅保留近 24h"></r>
+        <r t="WASM 加载失败回退" sev="low" lik="low" mit="保留纯 JS 内核作为降级路径"></r>
+      </risk>
+
+      <divider></divider>
+
+      <p class="tdr-subtitle">画廊结束 — 以上覆盖 Talon Doc Runtime 当前全部 DSL 组件。</p>
+
+    </main>
+    <script src="https://unpkg.com/@talon-ui/doc-runtime/dist/talon-doc-runtime.iife.js"></script>
+  </body>
+</html>

@@ -1216,4 +1216,75 @@ html[data-archetype] body.tdr-root { background: var(--tdr-bg); }
 
 /* ─── Focus highlight ─────────────────────────────────── */
 .tdr-focus { outline: 2px solid var(--tdr-accent); outline-offset: 4px; }
+
+/* ─── Mobile / responsive ─────────────────────────────────
+   Structural only — every multi-column component collapses to a single
+   column on narrow viewports, and the horizontal <flow> stacks vertically
+   (reusing the proven [data-v="true"] rules). Archetype files own the
+   token/typography side of the same breakpoints. */
+
+@media (max-width: 640px) {
+  /* Contain stray absolutely-positioned children (e.g. hidden term tooltips
+     near the right edge) so they never add a page-level horizontal scrollbar.
+     overflow-x: clip does NOT create a scroll container, so internal
+     overflow-x:auto regions (tables, code, flow) keep their own scrolling. */
+  .tdr-doc { overflow-x: clip; }
+
+  /* Multi-column grids → single column */
+  .tdr-compare,
+  .tdr-contrast-cols,
+  .tdr-decision-reason { grid-template-columns: 1fr; }
+  .tdr-grid { grid-template-columns: 1fr; }
+  .tdr-analogy-cols { grid-template-columns: 1fr; }
+
+  /* The premise→conclusion / analogy connectors point down once stacked */
+  .tdr-decision-reason::after { transform: translate(-50%, -50%) rotate(90deg); }
+  .tdr-analogy-link { transform: rotate(90deg); }
+
+  /* Data rows that used fixed label columns → stack label over value */
+  .tdr-bar { grid-template-columns: 1fr; gap: var(--tdr-space-2); }
+  .tdr-file { grid-template-columns: 1fr; gap: var(--tdr-space-2); }
+  .tdr-kv-row { grid-template-columns: 1fr; gap: var(--tdr-space-2); }
+  .tdr-compare-dim-head,
+  .tdr-compare-dim-row { grid-template-columns: minmax(6rem, 1fr) 1fr; }
+
+  /* Risk register (4-col) → title + a wrapping rest */
+  .tdr-risk-head,
+  .tdr-risk-row { grid-template-columns: 1fr 1fr; }
+  .tdr-risk-col { border-right: 0; }
+
+  /* Term tooltip: keep it from being wider than the viewport. */
+  .tdr-term-tip { max-width: min(260px, 80vw); }
+
+  /* Metrics: allow a single card per row on the narrowest phones */
+  .tdr-metrics { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+
+  /* Horizontal flow → vertical stack (mirror [data-v="true"]) */
+  .tdr-flow { overflow-x: visible; }
+  .tdr-flow-body {
+    flex-direction: column; align-items: center;
+    gap: var(--tdr-space-2); min-width: 0;
+  }
+  .tdr-flow .tdr-arrow { align-self: center; flex-direction: column; }
+
+  /* Wide content keeps its own scroll context instead of widening the page */
+  .tdr-doc table,
+  .tdr-src pre,
+  .tdr-cb pre { overflow-x: auto; }
+}
+
+@media (max-width: 480px) {
+  /* Tighten the document gutter so 375px phones keep usable line length */
+  .tdr-doc { padding-left: var(--tdr-space-4); padding-right: var(--tdr-space-4); }
+
+  /* Smaller tab + badge chrome */
+  .tdr-tab-btn { padding: var(--tdr-space-3) var(--tdr-space-4); font-size: var(--tdr-text-xs); }
+  .tdr-callout-icon { width: 24px; height: 24px; }
+
+  /* Even the 2-column dimension + risk tables go single-column here */
+  .tdr-compare-dim-head,
+  .tdr-compare-dim-row,
+  .tdr-risk-head,
+  .tdr-risk-row { grid-template-columns: 1fr; }
+}
 `

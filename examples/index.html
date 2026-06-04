@@ -284,7 +284,7 @@
         </div>
 
         <div class="width-ctl">
-          <input type="range" id="wrange" min="320" max="1600" step="1" value="1280" aria-label="预览宽度" />
+          <input type="range" id="wrange" min="375" max="1600" step="1" value="1280" aria-label="预览宽度" />
           <span class="width-readout"><span id="wval">自适应</span></span>
         </div>
 
@@ -388,6 +388,38 @@ npm install @talon-ui/doc-runtime
         var wval = document.getElementById('wval');
         var handle = document.getElementById('handle');
         var current = EXAMPLES[0];
+        var currentTheme = 'auto';
+
+        // Apply a theme to the SHELL and broadcast it into the preview iframe.
+        // Each iframe runs its own runtime instance, so the shell's setTheme()
+        // only themes the shell chrome — we must reach into the frame's own
+        // TalonDocRuntime (same-origin) to theme the rendered example too.
+        function applyTheme(theme) {
+          currentTheme = theme;
+          var rt = window.TalonDocRuntime;
+          if (rt && rt.setTheme) rt.setTheme(theme);
+          themeFrame(frame);
+        }
+        function themeFrame(f) {
+          try {
+            var win = f.contentWindow;
+            if (win && win.TalonDocRuntime && win.TalonDocRuntime.setTheme) {
+              win.TalonDocRuntime.setTheme(currentTheme);
+            } else if (f.contentDocument) {
+              // Runtime not ready yet (or absent) — set the attribute directly;
+              // the runtime reads data-tdr-theme on mount.
+              var de = f.contentDocument.documentElement;
+              if (currentTheme === 'auto') de.removeAttribute('data-tdr-theme');
+              else de.setAttribute('data-tdr-theme', currentTheme);
+            }
+          } catch (_) { /* cross-origin (shouldn't happen for local files) */ }
+        }
+        // Re-apply the current theme whenever a fresh example finishes loading.
+        frame.addEventListener('load', function () {
+          // give the frame's runtime a tick to register on window
+          themeFrame(frame);
+          setTimeout(function () { themeFrame(frame); }, 60);
+        });
 
         // build rail
         EXAMPLES.forEach(function (ex, i) {
@@ -418,11 +450,13 @@ npm install @talon-ui/doc-runtime
             metaW.textContent = '视口自适应';
             return;
           }
-          w = Math.round(w);
+          // 375px is the minimum supported width — never preview narrower.
+          var MIN_W = 375;
+          w = Math.max(MIN_W, Math.round(w));
           frameWrap.classList.remove('is-fit');
-          // clamp to the available stage width so it never overflows
+          // clamp the DISPLAYED width to the available stage so it never overflows
           var stageW = frameWrap.parentElement.clientWidth - 32;
-          var applied = Math.min(w, Math.max(280, stageW));
+          var applied = Math.min(w, Math.max(MIN_W, stageW));
           frameWrap.style.width = applied + 'px';
           wval.innerHTML = w + '<span class="unit"> px</span>';
           metaW.textContent = (applied < w ? '受限于窗口 · ' : '') + w + ' px 宽';
@@ -462,14 +496,12 @@ npm install @talon-ui/doc-runtime
           });
         })();
 
-        // ── theme passthrough: switch the SHELL theme (the iframes carry their
-        //    own runtime, but the shell uses tokens so it should re-theme too) ──
+        // ── theme: switch BOTH the shell chrome and the preview iframe ──
         document.querySelectorAll('.theme-ctl button').forEach(function (b) {
           b.addEventListener('click', function () {
             document.querySelectorAll('.theme-ctl button').forEach(function (x) { x.classList.remove('is-active'); });
             b.classList.add('is-active');
-            var rt = window.TalonDocRuntime;
-            if (rt && rt.setTheme) rt.setTheme(b.dataset.theme);
+            applyTheme(b.dataset.theme);
           });
         });
 

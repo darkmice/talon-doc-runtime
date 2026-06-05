@@ -83,105 +83,30 @@ mount(document.querySelector('#artifact'))
 
 TDR 以 Anthropic Skills 格式打包，安装后任何 Agent 会话提到"结构化文档 / 复盘 / 决策记录 / 评审报告"时自动触发。
 
-> 📋 **专给 Agent 的自动安装运行手册**（决策树 + 各方式完整命令 + 验证 + 故障排查）见 **[docs/install-skill.md](docs/install-skill.md)**。下面是同一套方式的速查。
+> 📋 **完整的 Agent 安装运行手册见 → [docs/install-skill.md](docs/install-skill.md)**：含「先确定你所属 CLI 的 skill 目录」对照表（Claude Code / Cursor / Codex / Gemini / Copilot …，**不写死 `~/.claude`**）、各下载方式的完整命令、验证与故障排查。
 
-> **Agent 操作指引（给 Claude / Codex 等读到这里的助手）**：
-> 用户让你"安装 Talon Doc Runtime skill"时，**默认走方式 A**（一行命令搞定）。仅当 `gh` 不可用或用户明说"我没有 GitHub CLI"时，再退回方式 B 或方式 C。安装完后**自动跑一次 §验证**确认 `~/.claude/skills/talon-doc-runtime/SKILL.md` 存在。
-
-### 方式 A：从 GitHub Release 一键安装（推荐）
-
-适用场景：已发布版本，用户有 `gh` CLI。
+速查（以 **Claude Code** 为例，其它 CLI 把 `SKILLS_DIR` 换成自己的路径）：
 
 ```bash
-# 拉取最新 release 的 .skill 文件，解压到 ~/.claude/skills/
-mkdir -p ~/.claude/skills && \
-gh release download --repo darkmice/talon-doc-runtime \
-  --pattern '*.skill' \
-  --output /tmp/talon-doc-runtime.skill && \
-unzip -o /tmp/talon-doc-runtime.skill -d ~/.claude/skills/ && \
-rm /tmp/talon-doc-runtime.skill && \
-echo "✓ installed: ~/.claude/skills/talon-doc-runtime/"
+SKILLS_DIR=~/.claude/skills && mkdir -p "$SKILLS_DIR" && \
+gh release download --repo darkmice/talon-doc-runtime --pattern '*.skill' \
+  --output /tmp/tdr.skill && \
+unzip -o /tmp/tdr.skill -d "$SKILLS_DIR/" && rm /tmp/tdr.skill && \
+echo "✓ installed: $SKILLS_DIR/talon-doc-runtime/"
 ```
 
-固定到具体版本（生产环境推荐）：
-
-```bash
-# 把 v0.1.0 改成想要的版本号
-VERSION=v0.1.0 && \
-mkdir -p ~/.claude/skills && \
-gh release download "$VERSION" --repo darkmice/talon-doc-runtime \
-  --pattern '*.skill' \
-  --output /tmp/talon-doc-runtime.skill && \
-unzip -o /tmp/talon-doc-runtime.skill -d ~/.claude/skills/ && \
-rm /tmp/talon-doc-runtime.skill && \
-echo "✓ installed $VERSION"
-```
-
-### 方式 B：纯 curl，不依赖 gh
-
-适用场景：没有 `gh` CLI 但有 `curl` 和 `unzip`。
-
-```bash
-# 解析 latest release 的 .skill 资产 URL 并下载
-mkdir -p ~/.claude/skills && \
-SKILL_URL=$(curl -s https://api.github.com/repos/darkmice/talon-doc-runtime/releases/latest \
-  | grep browser_download_url \
-  | grep '\.skill"' \
-  | head -1 \
-  | cut -d '"' -f 4) && \
-curl -fsSL "$SKILL_URL" -o /tmp/talon-doc-runtime.skill && \
-unzip -o /tmp/talon-doc-runtime.skill -d ~/.claude/skills/ && \
-rm /tmp/talon-doc-runtime.skill && \
-echo "✓ installed: ~/.claude/skills/talon-doc-runtime/"
-```
-
-### 方式 C：从仓库源文件拼装（main 分支、未发版时）
-
-适用场景：还没有任何 Release，或想跟 main 分支最新代码。这条路径不下载 `.skill` 文件，而是把仓库里的源文件 + npm 上的 runtime 直接拼装到本地 skill 目录。
-
-```bash
-# 1. 创建 skill 目录骨架
-SKILL_DIR=~/.claude/skills/talon-doc-runtime && \
-mkdir -p "$SKILL_DIR/references" "$SKILL_DIR/scripts" "$SKILL_DIR/assets" && \
-
-# 2. 从仓库 main 分支拉文档与脚本
-RAW=https://raw.githubusercontent.com/darkmice/talon-doc-runtime/main && \
-curl -fsSL "$RAW/SKILL.md"                 -o "$SKILL_DIR/SKILL.md" && \
-curl -fsSL "$RAW/references/canvas.md"     -o "$SKILL_DIR/references/canvas.md" && \
-curl -fsSL "$RAW/references/lineage.md"    -o "$SKILL_DIR/references/lineage.md" && \
-curl -fsSL "$RAW/scripts/critique.mjs"     -o "$SKILL_DIR/scripts/critique.mjs" && \
-curl -fsSL "$RAW/scripts/balance.mjs"      -o "$SKILL_DIR/scripts/balance.mjs" && \
-
-# 3. 从 npm 拉 runtime IIFE
-curl -fsSL https://unpkg.com/@talon-ui/doc-runtime/dist/talon-doc-runtime.iife.js \
-  -o "$SKILL_DIR/assets/talon-doc-runtime.iife.js" && \
-
-echo "✓ installed: $SKILL_DIR (from main + npm latest)"
-```
-
-### 验证
-
-任意方式安装后，检查这两项：
-
-```bash
-test -f ~/.claude/skills/talon-doc-runtime/SKILL.md && \
-test -f ~/.claude/skills/talon-doc-runtime/assets/talon-doc-runtime.iife.js && \
-echo "✓ skill installed correctly" || \
-echo "✗ skill files missing — re-run install"
-```
-
-下一次以"结构化文档 / 复盘 / 决策记录"为主题的对话里，Claude Code 会自动加载 `SKILL.md` 触发条件。
+没有 `gh`、还没发版、或非 Claude 的 CLI（Codex/Gemini/Copilot 等经 `AGENTS.md` / `GEMINI.md` 注入），都见安装手册的对应小节。
 
 ### 卸载
 
 ```bash
-rm -rf ~/.claude/skills/talon-doc-runtime
+rm -rf "$SKILLS_DIR/talon-doc-runtime"   # SKILLS_DIR 同你安装时所用
 ```
 
 ### Skill 包含的资源
 
 ```
-~/.claude/skills/talon-doc-runtime/
+<SKILLS_DIR>/talon-doc-runtime/           # Claude Code 下 SKILLS_DIR = ~/.claude/skills
 ├── SKILL.md                              触发条件 + DSL 速查 + 最小骨架
 ├── references/
 │   ├── canvas.md                         写作准则（视觉预算、组件选型、状态契约）

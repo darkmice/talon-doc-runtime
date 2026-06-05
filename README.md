@@ -83,6 +83,8 @@ mount(document.querySelector('#artifact'))
 
 TDR 以 Anthropic Skills 格式打包，安装后任何 Agent 会话提到"结构化文档 / 复盘 / 决策记录 / 评审报告"时自动触发。
 
+> 📋 **专给 Agent 的自动安装运行手册**（决策树 + 各方式完整命令 + 验证 + 故障排查）见 **[docs/install-skill.md](docs/install-skill.md)**。下面是同一套方式的速查。
+
 > **Agent 操作指引（给 Claude / Codex 等读到这里的助手）**：
 > 用户让你"安装 Talon Doc Runtime skill"时，**默认走方式 A**（一行命令搞定）。仅当 `gh` 不可用或用户明说"我没有 GitHub CLI"时，再退回方式 B 或方式 C。安装完后**自动跑一次 §验证**确认 `~/.claude/skills/talon-doc-runtime/SKILL.md` 存在。
 
